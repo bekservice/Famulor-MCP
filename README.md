@@ -429,7 +429,12 @@ npm run format
   - Parameters: `assistant_id`, `phone_number`, `variables` (optional)
 - **`get_call`** - Get details of a specific call
   - Parameters: `call_id`
-- **`list_calls`** - List all calls with optional filters
+- **`list_calls`** - List all calls with optional filters (paginated)
+  - Parameters:
+    - `assistant_id` (optional) - Filter by assistant ID
+    - `page` (optional) - Page number (default: 1)
+    - `per_page` (optional) - Number of calls per page (default: 15)
+  - Returns: Paginated response with `data` array containing calls and pagination metadata
   - Parameters: `assistant_id` (optional), `limit` (optional)
 
 ### Assistant Tools
@@ -526,7 +531,11 @@ npm run format
   - **Note:** Starting a campaign requires sufficient leads and balance. Stopping a campaign will cancel ongoing calls.
 
 ### Lead Tools
-- **`list_leads`** - List all leads for the authenticated user
+- **`list_leads`** - List all leads for the authenticated user (paginated)
+  - Parameters:
+    - `page` (optional) - Page number (default: 1)
+    - `per_page` (optional) - Number of leads per page (default: 15)
+  - Returns: Paginated response with `data` array containing leads and pagination metadata
   - Parameters: None
   - Returns: Array of all leads with details including phone number, status, variables, campaign information, and secondary contacts
 - **`create_lead`** - Create a new lead in the Famulor system

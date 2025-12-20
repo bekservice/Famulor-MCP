@@ -14,7 +14,21 @@ export async function handleLeadTools(
   try {
     switch (name) {
       case 'list_leads': {
-        const result = await client.get('/api/user/leads');
+        const { page, per_page } = args as {
+          page?: number;
+          per_page?: number;
+        };
+
+        const params: string[] = [];
+        if (page !== undefined) {
+          params.push(`page=${page}`);
+        }
+        if (per_page !== undefined) {
+          params.push(`per_page=${per_page}`);
+        }
+
+        const endpoint = `/api/user/leads${params.length > 0 ? `?${params.join('&')}` : ''}`;
+        const result = await client.get(endpoint);
 
         return {
           content: [

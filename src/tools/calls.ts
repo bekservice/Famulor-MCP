@@ -51,16 +51,24 @@ export async function handleCallTools(
       }
 
       case 'list_calls': {
-        const { assistant_id, limit = 50 } = args as {
+        const { assistant_id, page, per_page } = args as {
           assistant_id?: string;
-          limit?: number;
+          page?: number;
+          per_page?: number;
         };
 
-          let endpoint = `/api/user/calls?limit=${limit}`;
-          if (assistant_id) {
-            endpoint += `&assistant_id=${assistant_id}`;
-          }
+        const params: string[] = [];
+        if (page !== undefined) {
+          params.push(`page=${page}`);
+        }
+        if (per_page !== undefined) {
+          params.push(`per_page=${per_page}`);
+        }
+        if (assistant_id) {
+          params.push(`assistant_id=${assistant_id}`);
+        }
 
+        const endpoint = `/api/user/calls${params.length > 0 ? `?${params.join('&')}` : ''}`;
         const result = await client.get(endpoint);
 
         return {

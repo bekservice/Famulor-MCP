@@ -94,7 +94,7 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         },
         {
           name: 'list_calls',
-          description: 'List all calls with optional filter options',
+          description: 'List all calls with optional filter options (paginated)',
           inputSchema: {
             type: 'object',
             properties: {
@@ -102,10 +102,13 @@ export async function setupFamulorServer(server: Server): Promise<void> {
                 type: 'string',
                 description: 'Filter by assistant ID',
               },
-              limit: {
+              page: {
                 type: 'number',
-                description: 'Maximum number of calls to return',
-                default: 50,
+                description: 'Page number (default: 1)',
+              },
+              per_page: {
+                type: 'number',
+                description: 'Number of calls per page (default: 15)',
               },
             },
           },
@@ -480,10 +483,19 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         // Lead tools
         {
           name: 'list_leads',
-          description: 'List all leads for the authenticated user',
+          description: 'List all leads for the authenticated user (paginated)',
           inputSchema: {
             type: 'object',
-            properties: {},
+            properties: {
+              page: {
+                type: 'number',
+                description: 'Page number (default: 1)',
+              },
+              per_page: {
+                type: 'number',
+                description: 'Number of leads per page (default: 15)',
+              },
+            },
           },
         },
         {
