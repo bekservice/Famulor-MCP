@@ -181,14 +181,20 @@ Choose your MCP client below for specific installation instructions:
    {
      "mcpServers": {
        "famulor": {
+         "type": "http",
          "url": "https://mcp.famulor.io/sse",
-         "env": {
-           "FAMULOR_API_KEY": "your-api-key-here"
+         "headers": {
+           "Authorization": "Bearer your-api-key-here"
          }
        }
      }
    }
    ```
+
+   **Important:**
+   - Replace `your-api-key-here` with your actual Famulor API key
+   - The API key must be prefixed with `Bearer ` in the Authorization header
+   - You can get your API key at [Famulor API Keys](https://app.famulor.de/api-keys)
 
 3. **Restart Claude Desktop** for the changes to take effect.
 
@@ -236,14 +242,20 @@ Choose your MCP client below for specific installation instructions:
    {
      "mcpServers": {
        "famulor": {
+         "type": "http",
          "url": "https://mcp.famulor.io/sse",
-         "env": {
-           "FAMULOR_API_KEY": "your-api-key-here"
+         "headers": {
+           "Authorization": "Bearer your-api-key-here"
          }
        }
      }
    }
    ```
+
+   **Important:**
+   - Replace `your-api-key-here` with your actual Famulor API key
+   - The API key must be prefixed with `Bearer ` in the Authorization header
+   - You can get your API key at [Famulor API Keys](https://app.famulor.de/api-keys)
 
 5. Go back to **Settings** > **MCP** and click the **refresh** button
 6. The Cursor agent will now be able to use the Famulor MCP tools
@@ -295,10 +307,13 @@ Choose your MCP client below for specific installation instructions:
 To add the online MCP server to Claude Code, run this command in your terminal:
 
 ```bash
-claude mcp add-json "famulor" '{"url":"https://mcp.famulor.io/sse","env":{"FAMULOR_API_KEY":"your-api-key-here"}}'
+claude mcp add-json "famulor" '{"type":"http","url":"https://mcp.famulor.io/sse","headers":{"Authorization":"Bearer your-api-key-here"}}'
 ```
 
-**Note:** Replace `your-api-key-here` with your actual API key.
+**Note:** 
+- Replace `your-api-key-here` with your actual Famulor API key
+- The API key must be prefixed with `Bearer ` in the Authorization header
+- You can get your API key at [Famulor API Keys](https://app.famulor.de/api-keys)
 
 #### Option 2: Use Your Own Local Server
 
