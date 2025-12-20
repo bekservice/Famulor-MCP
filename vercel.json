@@ -1,19 +1,21 @@
 {
   "version": 2,
   "buildCommand": "npm run vercel-build",
-  "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": null,
   "rewrites": [
     {
+      "source": "/health",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/sse",
+      "destination": "/api/index"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api/index"
     }
-  ],
-  "functions": {
-    "api/index.ts": {
-      "runtime": "@vercel/node"
-    }
-  }
+  ]
 }
 
