@@ -116,7 +116,8 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         // Assistant tools
         {
           name: 'get_assistants',
-          description: 'Get all available AI assistants from the Famulor account (paginated)',
+          description:
+            'Get all available AI assistants from the Famulor account (paginated). Returns assistant configuration including variables that can be used when creating leads. Variable names are fixed in the assistant configuration and must be used exactly as defined when creating leads.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -134,7 +135,7 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         {
           name: 'get_phone_numbers',
           description:
-            'Alle verfügbaren Telefonnummern für die Assistenten-Zuweisung abrufen',
+            'Get all available phone numbers for assistant assignment',
           inputSchema: {
             type: 'object',
             properties: {
@@ -142,7 +143,7 @@ export async function setupFamulorServer(server: Server): Promise<void> {
                 type: 'string',
                 enum: ['inbound', 'outbound'],
                 description:
-                  'Telefonnummern nach Assistenten-Typ filtern. Optionen: inbound, outbound',
+                  'Filter phone numbers by assistant type. Options: inbound, outbound',
               },
             },
           },
@@ -150,7 +151,7 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         {
           name: 'get_models',
           description:
-            'Alle verfügbaren LLM-Modelle für die Assistenten-Konfiguration abrufen',
+            'Get all available LLM models for assistant configuration',
           inputSchema: {
             type: 'object',
             properties: {},
@@ -159,7 +160,7 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         {
           name: 'get_voices',
           description:
-            'Alle verfügbaren Stimmen für die Assistenten-Konfiguration abrufen',
+            'Get all available voices for assistant configuration',
           inputSchema: {
             type: 'object',
             properties: {
@@ -167,7 +168,7 @@ export async function setupFamulorServer(server: Server): Promise<void> {
                 type: 'string',
                 enum: ['pipeline', 'multimodal'],
                 description:
-                  'Stimmen nach Assistenten-Modus filtern. Optionen: pipeline, multimodal',
+                  'Filter voices by assistant mode. Options: pipeline, multimodal',
               },
             },
           },
@@ -175,7 +176,7 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         {
           name: 'get_languages',
           description:
-            'Alle verfügbaren Sprachen für die Assistenten-Konfiguration abrufen',
+            'Get all available languages for assistant configuration',
           inputSchema: {
             type: 'object',
             properties: {},
@@ -183,120 +184,120 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         },
         {
           name: 'update_assistant',
-          description: 'Die Konfiguration eines bestehenden KI-Assistenten aktualisieren',
+          description: 'Update the configuration of an existing AI assistant',
           inputSchema: {
             type: 'object',
             properties: {
               id: {
                 type: 'number',
-                description: 'Die eindeutige Kennung des zu aktualisierenden Assistenten',
+                description: 'The unique identifier of the assistant to update',
               },
               assistant_name: {
                 type: 'string',
-                description: 'Der Name des Assistenten (max. 255 Zeichen)',
+                description: 'The name of the assistant (max. 255 characters)',
               },
               voice_id: {
                 type: 'number',
                 description:
-                  'Die Stimmen-ID für den Assistenten (muss in verfügbaren Stimmen existieren)',
+                  'The voice ID for the assistant (must exist in available voices)',
               },
               language: {
                 type: 'string',
-                description: 'Der Sprachname für den Assistenten (max. 100 Zeichen)',
+                description: 'The language name for the assistant (max. 100 characters)',
               },
               llm_model: {
                 type: 'string',
-                description: 'Der Name des zu verwendenden LLM-Modells (max. 100 Zeichen)',
+                description: 'The name of the LLM model to use (max. 100 characters)',
               },
               calls_direction: {
                 type: 'string',
                 enum: ['receive', 'make'],
-                description: 'Der Anrufrichtungstyp. Optionen: receive, make',
+                description: 'The call direction type. Options: receive, make',
               },
               engine_type: {
                 type: 'string',
                 enum: ['pipeline', 'multimodal'],
-                description: 'Der zu verwendende Engine-Typ. Optionen: pipeline, multimodal',
+                description: 'The engine type to use. Options: pipeline, multimodal',
               },
               timezone: {
                 type: 'string',
-                description: 'Die Zeitzone für den Assistenten (z.B. "Europe/Berlin")',
+                description: 'The timezone for the assistant (e.g., "Europe/Berlin")',
               },
               initial_message: {
                 type: 'string',
                 description:
-                  'Die erste Nachricht, die der Assistent beim Anrufstart sprechen wird',
+                  'The first message the assistant will speak at call start',
               },
               system_prompt: {
                 type: 'string',
                 description:
-                  'Der System-Prompt, der das Verhalten und die Persönlichkeit des Assistenten definiert',
+                  'The system prompt that defines the assistant behavior and personality',
               },
               phone_number_id: {
                 type: ['number', 'null'],
                 description:
-                  'Die ID einer Telefonnummer, die dem Assistenten zugewiesen werden soll (auf null setzen zum Entfernen)',
+                  'The ID of a phone number to assign to the assistant (set to null to remove)',
               },
               tool_ids: {
                 type: 'array',
                 items: { type: 'number' },
                 description:
-                  'Array von Mid-call Action-IDs zur Synchronisierung mit dem Assistenten. Ersetzt alle bestehenden Tool-Zuweisungen. Übergeben Sie ein leeres Array, um alle Tools zu entfernen.',
+                  'Array of mid-call action IDs to sync with the assistant. Replaces all existing tool assignments. Pass an empty array to remove all tools.',
               },
               endpoint_type: {
                 type: 'string',
                 enum: ['vad', 'ai'],
-                description: 'Sprachaktivitätserkennung-Typ. Optionen: vad, ai',
+                description: 'Voice activity detection type. Options: vad, ai',
               },
               endpoint_sensitivity: {
                 type: 'number',
-                description: 'Endpunkt-Sensibilitätslevel (0-5)',
+                description: 'Endpoint sensitivity level (0-5)',
               },
               interrupt_sensitivity: {
                 type: 'number',
-                description: 'Unterbrechungs-Sensibilitätslevel (0-5)',
+                description: 'Interruption sensitivity level (0-5)',
               },
               ambient_sound_volume: {
                 type: 'number',
-                description: 'Ambiente-Sound-Lautstärke (0-1)',
+                description: 'Ambient sound volume (0-1)',
               },
               post_call_evaluation: {
                 type: 'boolean',
-                description: 'Ob Post-Call-Evaluation aktiviert werden soll',
+                description: 'Whether to enable post-call evaluation',
               },
               send_webhook_only_on_completed: {
                 type: 'boolean',
                 description:
-                  'Ob Webhooks nur bei abgeschlossenen Anrufen gesendet werden sollen',
+                  'Whether to send webhooks only on completed calls',
               },
               include_recording_in_webhook: {
                 type: 'boolean',
                 description:
-                  'Ob Aufzeichnungs-URL in Webhook-Payload eingeschlossen werden soll',
+                  'Whether to include recording URL in webhook payload',
               },
               is_webhook_active: {
                 type: 'boolean',
-                description: 'Ob Webhook-Benachrichtigungen aktiviert sind',
+                description: 'Whether webhook notifications are enabled',
               },
               webhook_url: {
                 type: ['string', 'null'],
                 description:
-                  'Die Webhook-URL für Post-Call-Benachrichtigungen (kann auf null gesetzt werden zum Entfernen)',
+                  'The webhook URL for post-call notifications (can be set to null to remove)',
               },
               use_min_interrupt_words: {
                 type: 'boolean',
                 description:
-                  'Ob die Mindest-Unterbrechungswörter-Einstellung verwendet werden soll',
+                  'Whether to use the minimum interrupt words setting',
               },
               min_interrupt_words: {
                 type: 'number',
                 description:
-                  'Mindestanzahl von Wörtern vor erlaubter Unterbrechung (0-10)',
+                  'Minimum number of words before allowed interruption (0-10)',
               },
               variables: {
                 type: 'object',
                 description:
-                  'Schlüssel-Wert-Paare von benutzerdefinierten Variablen für den Assistenten',
+                  'Key-value pairs of custom variables for the assistant',
               },
               post_call_schema: {
                 type: 'array',
@@ -306,21 +307,21 @@ export async function setupFamulorServer(server: Server): Promise<void> {
                     name: {
                       type: 'string',
                       description:
-                        'Der Name des Schema-Feldes (nur alphanumerisch und Unterstriche)',
+                        'The name of the schema field (alphanumeric and underscores only)',
                     },
                     type: {
                       type: 'string',
                       enum: ['string', 'number', 'bool'],
-                      description: 'Der Datentyp. Optionen: string, number, bool',
+                      description: 'The data type. Options: string, number, bool',
                     },
                     description: {
                       type: 'string',
-                      description: 'Beschreibung dessen, was dieses Feld repräsentiert',
+                      description: 'Description of what this field represents',
                     },
                   },
                   required: ['name', 'type', 'description'],
                 },
-                description: 'Schema-Definition für Post-Call-Datenextraktion',
+                description: 'Schema definition for post-call data extraction',
               },
               end_call_tool: {
                 type: 'object',
@@ -328,65 +329,65 @@ export async function setupFamulorServer(server: Server): Promise<void> {
                   description: {
                     type: 'string',
                     description:
-                      'Beschreibung für die End Call Tool-Funktionalität (max. 500 Zeichen)',
+                      'Description for the end call tool functionality (max. 500 characters)',
                   },
                 },
-                description: 'End Call Tool-Konfiguration',
+                description: 'End call tool configuration',
               },
               llm_temperature: {
                 type: 'number',
-                description: 'LLM-Temperatur-Einstellung (0-1)',
+                description: 'LLM temperature setting (0-1)',
               },
               voice_stability: {
                 type: 'number',
-                description: 'Stimm-Stabilität-Einstellung (0-1)',
+                description: 'Voice stability setting (0-1)',
               },
               voice_similarity: {
                 type: 'number',
-                description: 'Stimm-Ähnlichkeit-Einstellung (0-1)',
+                description: 'Voice similarity setting (0-1)',
               },
               speech_speed: {
                 type: 'number',
-                description: 'Sprechgeschwindigkeits-Multiplikator (0.7-1.2)',
+                description: 'Speech speed multiplier (0.7-1.2)',
               },
               allow_interruptions: {
                 type: 'boolean',
                 description:
-                  'Ob Unterbrechungen durch den Anrufer erlaubt werden sollen',
+                  'Whether interruptions by the caller are allowed',
               },
               filler_audios: {
                 type: 'boolean',
                 description:
-                  'Ob Füller-Audio während der Verarbeitung verwendet werden soll',
+                  'Whether to use filler audio during processing',
               },
               re_engagement_interval: {
                 type: 'number',
-                description: 'Re-Engagement-Intervall in Sekunden (7-600)',
+                description: 'Re-engagement interval in seconds (7-600)',
               },
               max_call_duration: {
                 type: 'number',
-                description: 'Maximale Anrufdauer in Sekunden (20-1200)',
+                description: 'Maximum call duration in seconds (20-1200)',
               },
               max_silence_duration: {
                 type: 'number',
-                description: 'Maximale Stillstand-Dauer in Sekunden (1-120)',
+                description: 'Maximum silence duration in seconds (1-120)',
               },
               end_call_on_voicemail: {
                 type: 'boolean',
-                description: 'Ob Anruf bei Voicemail-Erkennung beendet werden soll',
+                description: 'Whether to end call on voicemail detection',
               },
               noise_cancellation: {
                 type: 'boolean',
-                description: 'Ob Geräuschunterdrückung aktiviert werden soll',
+                description: 'Whether noise cancellation is enabled',
               },
               record_call: {
                 type: 'boolean',
-                description: 'Ob der Anruf aufgezeichnet werden soll',
+                description: 'Whether the call should be recorded',
               },
               who_speaks_first: {
                 type: 'string',
                 enum: ['AI assistant', 'Customer'],
-                description: 'Wer zuerst im Anruf spricht. Optionen: AI assistant, Customer',
+                description: 'Who speaks first in the call. Options: AI assistant, Customer',
               },
             },
             required: ['id'],
@@ -410,24 +411,24 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         {
           name: 'create_conversation',
           description:
-            'Neue Chat-Session mit einem KI-Assistenten starten. Erstellt eine Widget- oder Test-Conversation und gibt den initialen Verlauf zurück.',
+            'Start a new chat session with an AI assistant. Creates a widget or test conversation and returns the initial history.',
           inputSchema: {
             type: 'object',
             properties: {
               assistant_id: {
                 type: 'string',
-                description: 'UUID des Assistenten, der die Conversation übernehmen soll',
+                description: 'UUID of the assistant that will handle the conversation',
               },
               type: {
                 type: 'string',
                 enum: ['widget', 'test'],
                 description:
-                  'Conversation-Typ. Optionen: widget (kostenpflichtig) oder test (kostenlos für Entwicklung)',
+                  'Conversation type. Options: widget (paid) or test (free for development)',
               },
               variables: {
                 type: 'object',
                 description:
-                  'Individuelle Variablen, die in den Assistenten-Kontext injiziert werden (zugreifbar via {{variable_name}})',
+                  'Custom variables to inject into the assistant context (accessible via {{variable_name}})',
               },
             },
             required: ['assistant_id'],
@@ -436,17 +437,17 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         {
           name: 'send_message',
           description:
-            'Eine Nutzernachricht an eine bestehende Conversation senden und die Antwort des Assistenten erhalten',
+            'Send a user message to an existing conversation and receive the assistant response',
           inputSchema: {
             type: 'object',
             properties: {
               uuid: {
                 type: 'string',
-                description: 'UUID der bestehenden Conversation',
+                description: 'UUID of the existing conversation',
               },
               message: {
                 type: 'string',
-                description: 'Zu sendende Nutzernachricht (max. 2000 Zeichen)',
+                description: 'User message to send (max. 2000 characters)',
               },
             },
             required: ['uuid', 'message'],
@@ -514,10 +515,13 @@ export async function setupFamulorServer(server: Server): Promise<void> {
               },
               variables: {
                 type: 'array',
-                description: 'The variables to be passed to the lead',
+                description:
+                  'Array of variable objects to be passed to the lead. IMPORTANT: Variable names come from the assistant associated with the campaign and are FIXED. You can only add values for these variables, but the variable names cannot be changed. To see available variables, use get_assistants to retrieve the assistant configuration. If you need to change variable names, you must update the assistant (but this is dangerous as it may affect existing leads and calls).',
                 items: {
                   type: 'object',
                   additionalProperties: true,
+                  description:
+                    'Variable object with keys matching the assistant variable names. The variable names are fixed in the assistant configuration and cannot be modified here.',
                 },
               },
               allow_dupplicate: {
@@ -553,7 +557,8 @@ export async function setupFamulorServer(server: Server): Promise<void> {
               },
               variables: {
                 type: 'object',
-                description: 'Custom variables to be merged with existing lead variables',
+                description:
+                  'Custom variables to be merged with existing lead variables. IMPORTANT: Variable names come from the assistant associated with the campaign and are FIXED. You can only update values for these variables, but the variable names cannot be changed. To see available variables, use get_assistants to retrieve the assistant configuration. If you need to change variable names, you must update the assistant (but this is dangerous as it may affect existing leads and calls).',
                 additionalProperties: true,
               },
             },
@@ -564,23 +569,23 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         {
           name: 'send_sms',
           description:
-            'Eine SMS-Nachricht über Ihre Telefonnummer senden. Die SMS wird über Twilio versendet und die Kosten werden automatisch von Ihrem Kontoguthaben abgezogen.',
+            'Send an SMS message via your phone number. The SMS is sent via Twilio and costs are automatically deducted from your account balance.',
           inputSchema: {
             type: 'object',
             properties: {
               from: {
                 type: 'number',
                 description:
-                  'Die ID Ihrer Telefonnummer, von der die SMS gesendet werden soll (muss SMS-fähig sein)',
+                  'The ID of your phone number from which the SMS should be sent (must be SMS-capable)',
               },
               to: {
                 type: 'string',
                 description:
-                  'Die Telefonnummer des Empfängers im internationalen Format (z.B. "+4915123456789")',
+                  'The recipient phone number in international format (e.g., "+4915123456789")',
               },
               body: {
                 type: 'string',
-                description: 'Der SMS-Nachrichteninhalt (max. 300 Zeichen)',
+                description: 'The SMS message content (max. 300 characters)',
               },
             },
             required: ['from', 'to', 'body'],
