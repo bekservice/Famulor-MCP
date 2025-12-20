@@ -1,0 +1,11 @@
+# Build output - Vercel compiles TypeScript automatically
+dist/
+*.tsbuildinfo
+
+# Dependencies (already in .gitignore, but explicit here)
+node_modules/
+
+# Development files
+*.log
+.DS_Store
+
