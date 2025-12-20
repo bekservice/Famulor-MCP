@@ -139,6 +139,118 @@ In your MCP client (ChatGPT, Claude, etc.), try asking:
 - "List my recent calls"
 - "Make a call with assistant [ID] to [phone number]"
 
+## Client-Specific Installation
+
+Choose your MCP client below for specific installation instructions:
+
+### For Claude Desktop
+
+1. **Find your configuration file:**
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+   - **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+2. **Add the MCP server configuration:**
+
+   Open the configuration file and add the following to the `mcpServers` section:
+
+   ```json
+   {
+     "mcpServers": {
+       "famulor": {
+         "command": "node",
+         "args": [
+           "/absolute/path/to/Famulor-MCP/dist/index.js"
+         ],
+         "env": {
+           "FAMULOR_API_KEY": "your-api-key-here"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Restart Claude Desktop** for the changes to take effect.
+
+### For Cursor
+
+There are two ways to add the MCP server to Cursor:
+
+#### Option 1: Global Installation (Recommended)
+
+Add the server globally so it's available in all projects:
+
+1. Go to **Cursor Settings** > **Tools & Integrations**
+2. Click **"New MCP Server"**
+3. This will open `~/.cursor/mcp.json`
+4. Add the following configuration:
+
+   ```json
+   {
+     "mcpServers": {
+       "famulor": {
+         "command": "node",
+         "args": [
+           "/absolute/path/to/Famulor-MCP/dist/index.js"
+         ],
+         "env": {
+           "FAMULOR_API_KEY": "your-api-key-here"
+         }
+       }
+     }
+   }
+   ```
+
+5. Go back to **Settings** > **MCP** and click the **refresh** button
+6. The Cursor agent will now be able to use the Famulor MCP tools
+
+#### Option 2: Project-Specific Installation
+
+Add the server to a specific project:
+
+1. Create or edit `.cursor/mcp.json` in your project root
+2. Add the same configuration as above
+3. Restart Cursor or refresh MCP settings
+
+### For Claude Code
+
+To add this MCP server to Claude Code, run this command in your terminal:
+
+```bash
+claude mcp add-json "famulor" '{"command":"node","args":["/absolute/path/to/Famulor-MCP/dist/index.js"],"env":{"FAMULOR_API_KEY":"your-api-key-here"}}'
+```
+
+**Note:** Replace `/absolute/path/to/Famulor-MCP/dist/index.js` with your actual path and `your-api-key-here` with your actual API key.
+
+See the [official Claude Code MCP documentation](https://docs.anthropic.com/claude/docs/mcp) for more details.
+
+### For ChatGPT Desktop App
+
+1. **Find your configuration file:**
+   - **macOS**: `~/Library/Application Support/ChatGPT/mcp.json`
+   - **Windows**: `%APPDATA%\ChatGPT\mcp.json` or `C:\Users\YourUsername\AppData\Roaming\ChatGPT\mcp.json`
+   - **Linux**: `~/.config/ChatGPT/mcp.json`
+
+2. **Add the MCP server configuration:**
+
+   ```json
+   {
+     "mcpServers": {
+       "famulor": {
+         "command": "node",
+         "args": [
+           "/absolute/path/to/Famulor-MCP/dist/index.js"
+         ],
+         "env": {
+           "FAMULOR_API_KEY": "your-api-key-here"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Restart ChatGPT Desktop App** for the changes to take effect.
+
 ## Alternative: Using Environment Variable
 
 Instead of putting the API key in `mcp.json`, you can use an environment variable:
