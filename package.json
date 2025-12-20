@@ -23,6 +23,14 @@
   ],
   "author": "bekservice",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bekservice/Famulor-MCP.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bekservice/Famulor-MCP/issues"
+  },
+  "homepage": "https://github.com/bekservice/Famulor-MCP#readme",
   "engines": {
     "node": ">=20.0.0"
   },

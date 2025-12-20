@@ -1,24 +1,82 @@
-# ⚡ Quick Start - Start MCP Server Locally
+# ⚡ Quick Start Guide
 
-## For macOS with ChatGPT Desktop App
+This guide will help you get the Famulor MCP Server up and running with ChatGPT Desktop App in just a few minutes.
 
-### Step 1: Build Server
+## Prerequisites
+
+Before you begin, make sure you have:
+- ✅ Node.js >= 20.0.0 installed ([Download](https://nodejs.org/))
+- ✅ ChatGPT Desktop App installed ([Download](https://chatgpt.com/download))
+- ✅ A Famulor account and API key ([Get one here](https://app.famulor.de/api-keys))
+
+## Step-by-Step Setup
+
+### Step 1: Clone and Install
 
 ```bash
-cd /path/to/famulor-mcp
+# Clone the repository
+git clone https://github.com/bekservice/Famulor-MCP.git
+cd Famulor-MCP
+
+# Install dependencies
+npm install
+```
+
+### Step 2: Build the Server
+
+```bash
 npm run build
 ```
 
-### Step 2: Create MCP Configuration
+This creates the `dist/` folder with the compiled JavaScript files.
 
-Create or edit the MCP configuration file:
+### Step 3: Get Your API Key
+
+1. Go to [https://app.famulor.de/api-keys](https://app.famulor.de/api-keys)
+2. Sign in to your Famulor account
+3. Click "Create API Key" or use an existing one
+4. Copy the API key (you'll need it in the next step)
+
+### Step 4: Configure MCP
+
+Create the MCP configuration file for your operating system:
+
+#### macOS
 
 ```bash
+# Create the directory if it doesn't exist
 mkdir -p ~/Library/Application\ Support/ChatGPT
+
+# Open the configuration file
 nano ~/Library/Application\ Support/ChatGPT/mcp.json
 ```
 
-Add the following configuration (adjust the path):
+#### Windows
+
+Create or edit the file at:
+```
+C:\Users\YourUsername\AppData\Roaming\ChatGPT\mcp.json
+```
+
+Or use PowerShell:
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:APPDATA\ChatGPT"
+notepad "$env:APPDATA\ChatGPT\mcp.json"
+```
+
+#### Linux
+
+```bash
+# Create the directory if it doesn't exist
+mkdir -p ~/.config/ChatGPT
+
+# Open the configuration file
+nano ~/.config/ChatGPT/mcp.json
+```
+
+### Step 5: Add Configuration
+
+Add the following JSON to your `mcp.json` file. **Important:** Replace the placeholders!
 
 ```json
 {
@@ -26,7 +84,7 @@ Add the following configuration (adjust the path):
     "famulor": {
       "command": "node",
       "args": [
-        "/path/to/famulor-mcp/dist/index.js"
+        "/absolute/path/to/Famulor-MCP/dist/index.js"
       ],
       "env": {
         "FAMULOR_API_KEY": "your-api-key-here"
@@ -36,31 +94,49 @@ Add the following configuration (adjust the path):
 }
 ```
 
-**IMPORTANT:** 
-- Replace `your-api-key-here` with your actual API key
-- Make sure the path to `dist/index.js` is correct
+**Replace:**
+1. `/absolute/path/to/Famulor-MCP` with your actual absolute path
+2. `your-api-key-here` with your actual Famulor API key
 
-### Step 3: Restart ChatGPT Desktop App
+**Path Examples:**
 
-1. Close the ChatGPT Desktop App completely
-2. Restart it
-3. The MCP server should be automatically connected
+- **macOS:** `/Users/john/Famulor-MCP/dist/index.js`
+- **Windows:** `C:/Users/john/Famulor-MCP/dist/index.js` (use forward slashes)
+- **Linux:** `/home/john/Famulor-MCP/dist/index.js`
 
-### Step 4: Test
+**How to find your absolute path:**
 
-In ChatGPT you can now ask:
+- **macOS/Linux:** Run `pwd` in the Famulor-MCP directory
+- **Windows:** Run `cd` in PowerShell/CMD in the Famulor-MCP directory
+
+### Step 6: Restart ChatGPT Desktop App
+
+1. **Completely close** the ChatGPT Desktop App (not just minimize)
+2. **Restart** the app
+3. The MCP server should now be connected automatically
+
+### Step 7: Verify It Works
+
+Open ChatGPT and try these commands:
+
 - "Show me my Famulor assistants"
 - "List my recent calls"
-- "Make a call with Assistant X to number Y"
+- "What assistants do I have available?"
 
-## Alternative: With Environment Variable
+If you see responses, congratulations! 🎉 The MCP server is working!
 
-You can also set the API key as an environment variable:
+## Alternative: Using Environment Variable
+
+If you prefer not to store your API key in `mcp.json`, you can use an environment variable:
+
+### macOS/Linux
 
 ```bash
+# Add to your ~/.zshrc or ~/.bashrc
 export FAMULOR_API_KEY="your-api-key-here"
-cd /path/to/famulor-mcp
-npm start
+
+# Then reload your shell
+source ~/.zshrc  # or source ~/.bashrc
 ```
 
 Then remove the `env` section from `mcp.json`:
@@ -71,32 +147,96 @@ Then remove the `env` section from `mcp.json`:
     "famulor": {
       "command": "node",
       "args": [
-        "/path/to/famulor-mcp/dist/index.js"
+        "/absolute/path/to/Famulor-MCP/dist/index.js"
       ]
     }
   }
 }
 ```
 
+### Windows PowerShell
+
+```powershell
+# Set for current session
+$env:FAMULOR_API_KEY = "your-api-key-here"
+
+# Or set permanently
+[System.Environment]::SetEnvironmentVariable('FAMULOR_API_KEY', 'your-api-key-here', 'User')
+```
+
+### Windows CMD
+
+```cmd
+setx FAMULOR_API_KEY "your-api-key-here"
+```
+
 ## Troubleshooting
 
-### Server Not Found
-```bash
-# Check if the build was successful
-ls -la /path/to/famulor-mcp/dist/index.js
+### "Server not found" or "MCP server not recognized"
 
-# Check the MCP configuration
-cat ~/Library/Application\ Support/ChatGPT/mcp.json
-```
+1. **Check the path:**
+   ```bash
+   # Verify the file exists
+   ls -la /absolute/path/to/Famulor-MCP/dist/index.js  # macOS/Linux
+   dir C:\path\to\Famulor-MCP\dist\index.js            # Windows
+   ```
 
-### API Key Error
-- Make sure the API key is set in `mcp.json` or as an environment variable
-- Check if the API key is valid
+2. **Verify the build:**
+   ```bash
+   cd Famulor-MCP
+   npm run build
+   ```
 
-### View Logs
-The server outputs logs to stderr. You can see them if you start the server manually:
+3. **Check JSON syntax:**
+   - Use a JSON validator like [jsonlint.com](https://jsonlint.com/)
+   - Make sure there are no trailing commas
+   - Ensure all strings are in double quotes
 
-```bash
-cd /path/to/famulor-mcp
-node dist/index.js
-```
+4. **Restart ChatGPT completely:**
+   - Quit the app (not just close the window)
+   - Wait a few seconds
+   - Restart
+
+### "API key error" or "Authentication failed"
+
+1. **Verify your API key:**
+   - Go to [https://app.famulor.de/api-keys](https://app.famulor.de/api-keys)
+   - Check if the key is still valid
+   - Create a new key if needed
+
+2. **Check the configuration:**
+   - Make sure the API key is in quotes: `"FAMULOR_API_KEY": "your-key"`
+   - Verify there are no extra spaces or characters
+
+### "Node.js not found"
+
+1. **Check Node.js installation:**
+   ```bash
+   node --version  # Should show v20.0.0 or higher
+   ```
+
+2. **Install or update Node.js:**
+   - Download from [nodejs.org](https://nodejs.org/)
+   - Make sure to add Node.js to your PATH
+
+### Still having issues?
+
+1. Check the [MCP_SETUP.md](MCP_SETUP.md) for detailed setup instructions
+2. Review the [DEPLOYMENT.md](DEPLOYMENT.md) for deployment-specific help
+3. Open an issue on [GitHub](https://github.com/bekservice/Famulor-MCP/issues)
+
+## Next Steps
+
+Once everything is working:
+
+1. ✅ Explore the available tools (assistants, calls)
+2. ✅ Try making a test call
+3. ✅ Check out the [full documentation](README.md)
+4. ✅ Read about [online deployment](ONLINE_DEPLOYMENT.md) if you want to deploy this
+
+## Need Help?
+
+- 📖 Read the [full README](README.md)
+- 🚀 Check [MCP_SETUP.md](MCP_SETUP.md) for detailed setup
+- 🐛 [Open an issue](https://github.com/bekservice/Famulor-MCP/issues) on GitHub
+- 📚 Visit [Famulor Documentation](https://docs.famulor.io)

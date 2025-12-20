@@ -2,6 +2,9 @@
 
 An MCP (Model Context Protocol) server for the **Famulor Voice Agent Platform** that enables AI-powered phone calls, assistant management, and call data retrieval through ChatGPT and other MCP-compatible clients.
 
+[![GitHub](https://img.shields.io/badge/GitHub-bekservice/Famulor--MCP-blue)](https://github.com/bekservice/Famulor-MCP)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 ## Overview
 
 This MCP server provides access to the Famulor Voice Agent Platform, allowing users to make AI-powered phone calls, manage voice assistants, and retrieve call transcripts and recordings - all directly from ChatGPT Desktop App or other MCP clients.
@@ -9,56 +12,133 @@ This MCP server provides access to the Famulor Voice Agent Platform, allowing us
 ## Features
 
 - 📞 **Make Calls** - Initiate AI-powered phone conversations
-- 🤖 **Manage Assistants** - Manage your AI assistants
+- 🤖 **Manage Assistants** - Get and manage your AI assistants
 - 📊 **Retrieve Call Data** - Get transcripts, recordings, and metadata
-- 🔒 **Secure Authentication** - API key-based authentication
+- 🔒 **Secure Authentication** - API key-based authentication per user
 
 ## Prerequisites
 
-- Node.js >= 20.0.0
-- A Famulor API key ([Get one here](https://app.famulor.de/api-keys))
+- **Node.js** >= 20.0.0 ([Download](https://nodejs.org/))
+- **ChatGPT Desktop App** ([Download](https://chatgpt.com/download)) or another MCP-compatible client
+- A **Famulor API key** ([Get one here](https://app.famulor.de/api-keys))
 
-## Installation
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/bekservice/Famulor-MCP.git
+cd Famulor-MCP
+```
+
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-## Configuration
+### 3. Build the Server
 
-**Important**: Each user must configure their own Famulor API key!
+```bash
+npm run build
+```
 
-### For Local Development (ChatGPT Desktop App)
+### 4. Get Your API Key
 
-Local development supports multiple methods:
+1. Go to [Famulor API Keys](https://app.famulor.de/api-keys)
+2. Sign in or create an account
+3. Create a new API key
+4. Copy the API key (you'll need it in the next step)
 
-1. **MCP Config File** (for ChatGPT Desktop App):
+### 5. Configure MCP in ChatGPT Desktop App
+
+Create or edit the MCP configuration file for your platform:
+
+#### macOS
+```bash
+mkdir -p ~/Library/Application\ Support/ChatGPT
+nano ~/Library/Application\ Support/ChatGPT/mcp.json
+```
+
+#### Windows
+```bash
+# Create/edit: %APPDATA%\ChatGPT\mcp.json
+# Or navigate to: C:\Users\YourUsername\AppData\Roaming\ChatGPT\mcp.json
+```
+
+#### Linux
+```bash
+mkdir -p ~/.config/ChatGPT
+nano ~/.config/ChatGPT/mcp.json
+```
+
+Add the following configuration (replace the path with your actual path):
+
+```json
+{
+  "mcpServers": {
+    "famulor": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/Famulor-MCP/dist/index.js"
+      ],
+      "env": {
+        "FAMULOR_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+**Important:**
+- Replace `/absolute/path/to/Famulor-MCP` with the actual absolute path to your cloned repository
+- Replace `your-api-key-here` with your actual Famulor API key
+- On Windows, use forward slashes or escaped backslashes in the path
+
+**Example paths:**
+- macOS: `/Users/username/Famulor-MCP/dist/index.js`
+- Windows: `C:/Users/username/Famulor-MCP/dist/index.js` or `C:\\Users\\username\\Famulor-MCP\\dist\\index.js`
+- Linux: `/home/username/Famulor-MCP/dist/index.js`
+
+### 6. Restart ChatGPT Desktop App
+
+1. Close the ChatGPT Desktop App completely
+2. Restart it
+3. The MCP server should be automatically connected
+
+### 7. Test It!
+
+In ChatGPT, try asking:
+- "Show me my Famulor assistants"
+- "List my recent calls"
+- "Make a call with assistant [ID] to [phone number]"
+
+## Alternative: Using Environment Variable
+
+Instead of putting the API key in `mcp.json`, you can use an environment variable:
+
+1. Set the environment variable:
+   ```bash
+   export FAMULOR_API_KEY="your-api-key-here"  # macOS/Linux
+   # or
+   set FAMULOR_API_KEY=your-api-key-here        # Windows CMD
+   # or
+   $env:FAMULOR_API_KEY="your-api-key-here"     # Windows PowerShell
+   ```
+
+2. Remove the `env` section from `mcp.json`:
    ```json
    {
      "mcpServers": {
        "famulor": {
          "command": "node",
-         "args": ["/path/to/dist/index.js"],
-         "env": {
-           "FAMULOR_API_KEY": "your-api-key"
-         }
+         "args": [
+           "/absolute/path/to/Famulor-MCP/dist/index.js"
+         ]
        }
      }
    }
    ```
-
-2. **Environment Variable**:
-   ```bash
-   export FAMULOR_API_KEY="your-api-key"
-   npm start
-   ```
-
-### Get API Key
-
-1. Go to [Famulor API Keys](https://app.famulor.de/api-keys)
-2. Create a new API key
-3. Copy the API key
-4. Use it in the app (depending on deployment method)
 
 ## Development
 
@@ -66,17 +146,38 @@ Local development supports multiple methods:
 # Development with Hot Reload
 npm run dev
 
-# Build
+# Build for Production
 npm run build
 
-# Production Start
+# Start Production Build
 npm start
+
+# Lint Code
+npm run lint
+
+# Format Code
+npm run format
 ```
+
+## Available Tools
+
+### Call Tools
+- **`make_call`** - Make a phone call with an AI assistant
+  - Parameters: `assistant_id`, `phone_number`, `variables` (optional)
+- **`get_call`** - Get details of a specific call
+  - Parameters: `call_id`
+- **`list_calls`** - List all calls with optional filters
+  - Parameters: `assistant_id` (optional), `limit` (optional)
+
+### Assistant Tools
+- **`get_assistants`** - Get all available AI assistants
+- **`get_assistant_details`** - Get detailed information about a specific assistant
+  - Parameters: `assistant_id`
 
 ## Project Structure
 
 ```
-famulor-mcp/
+Famulor-MCP/
 ├── src/
 │   ├── index.ts          # MCP Server Entry Point
 │   ├── server.ts         # MCP Server Setup
@@ -88,11 +189,38 @@ famulor-mcp/
 │   │   └── famulor.ts    # Famulor API Client
 │   └── types/            # TypeScript Types
 │       └── famulor.ts    # Famulor API Types
-├── dist/                 # Compiled JavaScript
+├── dist/                 # Compiled JavaScript (generated)
 ├── package.json
 ├── tsconfig.json
-└── README.md
+├── README.md
+├── QUICKSTART.md         # Quick start guide
+├── MCP_SETUP.md          # Detailed setup guide
+├── DEPLOYMENT.md          # Deployment guide
+└── ONLINE_DEPLOYMENT.md   # Online deployment guide
 ```
+
+## Troubleshooting
+
+### Server Not Found
+- Verify the build was successful: `npm run build`
+- Check that `dist/index.js` exists
+- Verify the path in `mcp.json` is correct and absolute
+- On Windows, ensure you're using forward slashes or properly escaped backslashes
+
+### API Key Error
+- Make sure the API key is set in `mcp.json` or as an environment variable
+- Verify the API key is valid at [Famulor API Keys](https://app.famulor.de/api-keys)
+- Check that the API key hasn't expired
+
+### MCP Server Not Recognized
+- Check the JSON syntax in `mcp.json` (use a JSON validator)
+- Ensure the path to `dist/index.js` is absolute
+- Restart ChatGPT Desktop App completely
+- Check ChatGPT's logs for error messages
+
+### Node.js Version Issues
+- Verify Node.js version: `node --version` (must be >= 20.0.0)
+- Update Node.js if needed: [Download Node.js](https://nodejs.org/)
 
 ## About MCP
 
@@ -100,16 +228,13 @@ This is a **Model Context Protocol (MCP) Server** that provides access to the Fa
 
 The server exposes Famulor's voice agent capabilities as MCP tools, enabling ChatGPT Desktop App and other MCP-compatible clients to interact with the Famulor platform.
 
-## Tools
+## Security
 
-### Call Tools
-- `make_call` - Make a call with an AI assistant
-- `get_call` - Get details of a call
-- `list_calls` - List all calls
-
-### Assistant Tools
-- `get_assistants` - Get all assistants
-- `get_assistant_details` - Get details of an assistant
+- ✅ Each user configures their own API key
+- ✅ API keys are stored locally in `mcp.json` (encrypted by ChatGPT Desktop App)
+- ✅ No API keys are sent over the network (stdio is local)
+- ❌ **Never commit `mcp.json` with API keys to version control**
+- ❌ **Never share your API key publicly**
 
 ## Resources
 
@@ -117,8 +242,16 @@ The server exposes Famulor's voice agent capabilities as MCP tools, enabling Cha
 - [Famulor API Documentation](https://docs.famulor.io/api-reference/)
 - [MCP Protocol Documentation](https://modelcontextprotocol.io/)
 - [ChatGPT Desktop App](https://chatgpt.com/download)
+- [GitHub Repository](https://github.com/bekservice/Famulor-MCP)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
 MIT
 
+## Author
+
+[bekservice](https://github.com/bekservice)
