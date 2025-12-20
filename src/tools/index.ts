@@ -9,6 +9,11 @@ import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { FamulorClient } from '../auth/famulor.js';
 import { handleCallTools } from './calls.js';
 import { handleAssistantTools } from './assistants.js';
+import { handleConversationTools } from './conversations.js';
+import { handleCampaignTools } from './campaigns.js';
+import { handleLeadTools } from './leads.js';
+import { handleMidCallToolTools } from './midCallTools.js';
+import { handleSmsTools } from './sms.js';
 
 /**
  * Get Famulor client from user's stored API key
@@ -66,8 +71,44 @@ export async function registerAllTools(server: Server): Promise<void> {
       return handleCallTools(name, args, client);
     }
 
-    if (['get_assistants', 'get_assistant_details'].includes(name)) {
+    if (
+      [
+        'get_assistants',
+        'get_assistant_details',
+        'get_phone_numbers',
+        'get_models',
+        'get_voices',
+        'get_languages',
+        'update_assistant',
+      ].includes(name)
+    ) {
       return handleAssistantTools(name, args, client);
+    }
+
+    if (
+      ['get_conversation', 'create_conversation', 'send_message'].includes(name)
+    ) {
+      return handleConversationTools(name, args, client);
+    }
+
+    if (['list_campaigns', 'update_campaign_status'].includes(name)) {
+      return handleCampaignTools(name, args, client);
+    }
+
+    if (['list_leads', 'create_lead', 'update_lead'].includes(name)) {
+      return handleLeadTools(name, args, client);
+    }
+
+    if (
+      ['list_mid_call_tools', 'get_mid_call_tool', 'update_mid_call_tool'].includes(
+        name
+      )
+    ) {
+      return handleMidCallToolTools(name, args, client);
+    }
+
+    if (['send_sms'].includes(name)) {
+      return handleSmsTools(name, args, client);
     }
 
     throw new Error(`Unknown tool: ${name}`);

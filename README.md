@@ -436,6 +436,146 @@ npm run format
 - **`get_assistants`** - Get all available AI assistants
 - **`get_assistant_details`** - Get detailed information about a specific assistant
   - Parameters: `assistant_id`
+- **`get_phone_numbers`** - Get all available phone numbers for assistant assignment
+  - Parameters:
+    - `type` (optional) - Filter phone numbers by assistant type: 'inbound' or 'outbound'
+  - Returns: Array of available phone numbers with details including ID, phone number, country code, type label, and availability status
+- **`get_models`** - Get all available LLM models for assistant configuration
+  - Parameters: None
+  - Returns: Array of available LLM models with ID and name
+- **`get_voices`** - Get all available voices for assistant configuration
+  - Parameters:
+    - `mode` (optional) - Filter voices by assistant mode: 'pipeline' or 'multimodal'
+  - Returns: Array of available voices with ID, name, and mode compatibility
+- **`get_languages`** - Get all available languages for assistant configuration
+  - Parameters: None
+  - Returns: Array of available languages with ID, name, and ISO 639-1 two-letter language code (iso_2)
+- **`update_assistant`** - Update the configuration of an existing AI assistant
+  - Parameters:
+    - `id` (required) - The unique ID of the assistant to update
+    - All other parameters are optional - only specified fields will be updated:
+      - `assistant_name` - Assistant name (max 255 characters)
+      - `voice_id` - Voice ID (must exist in available voices)
+      - `language` - Language name (max 100 characters)
+      - `llm_model` - LLM model name (max 100 characters)
+      - `calls_direction` - Call direction type: 'receive' or 'make'
+      - `engine_type` - Engine type: 'pipeline' or 'multimodal'
+      - `timezone` - Timezone (e.g., "Europe/Berlin")
+      - `initial_message` - First message the assistant will speak at call start
+      - `system_prompt` - System prompt defining assistant behavior and personality
+      - `phone_number_id` - Phone number ID to assign (set to null to remove)
+      - `tool_ids` - Array of mid-call action IDs to sync with assistant
+      - `endpoint_type` - Voice activity detection type: 'vad' or 'ai'
+      - `endpoint_sensitivity` - Endpoint sensitivity level (0-5)
+      - `interrupt_sensitivity` - Interruption sensitivity level (0-5)
+      - `ambient_sound_volume` - Ambient sound volume (0-1)
+      - `post_call_evaluation` - Whether to enable post-call evaluation
+      - `send_webhook_only_on_completed` - Whether to send webhooks only on completed calls
+      - `include_recording_in_webhook` - Whether to include recording URL in webhook payload
+      - `is_webhook_active` - Whether webhook notifications are enabled
+      - `webhook_url` - Webhook URL for post-call notifications (set to null to remove)
+      - `use_min_interrupt_words` - Whether to use minimum interrupt words setting
+      - `min_interrupt_words` - Minimum number of words before allowed interruption (0-10)
+      - `variables` - Key-value pairs of custom variables for the assistant
+      - `post_call_schema` - Schema definition for post-call data extraction
+      - `end_call_tool` - End call tool configuration
+      - `llm_temperature` - LLM temperature setting (0-1)
+      - `voice_stability` - Voice stability setting (0-1)
+      - `voice_similarity` - Voice similarity setting (0-1)
+      - `speech_speed` - Speech speed multiplier (0.7-1.2)
+      - `allow_interruptions` - Whether interruptions by caller are allowed
+      - `filler_audios` - Whether to use filler audio during processing
+      - `re_engagement_interval` - Re-engagement interval in seconds (7-600)
+      - `max_call_duration` - Maximum call duration in seconds (20-1200)
+      - `max_silence_duration` - Maximum silence duration in seconds (1-120)
+      - `end_call_on_voicemail` - Whether to end call on voicemail detection
+      - `noise_cancellation` - Whether noise cancellation is enabled
+      - `record_call` - Whether the call should be recorded
+      - `who_speaks_first` - Who speaks first in the call: 'AI assistant' or 'Customer'
+  - Returns: Success message and updated assistant data
+
+### Conversation Tools
+- **`get_conversation`** - Get the complete message history of an existing Famulor conversation
+  - Parameters: `uuid` (required) - The UUID of the conversation to retrieve
+  - Returns: Full conversation history with messages, roles, and function calls
+- **`create_conversation`** - Start a new chat session with an AI assistant
+  - Parameters:
+    - `assistant_id` (required) - UUID of the assistant that will handle the conversation
+    - `type` (optional) - Conversation type: 'widget' (paid) or 'test' (free for development)
+    - `variables` (optional) - Custom variables to inject into the assistant context (accessible via {{variable_name}})
+  - Returns: Conversation ID, status, and initial history (if the assistant has a start message)
+  - **Note:** Widget conversations are paid; test conversations are free for development
+- **`send_message`** - Send a user message to an existing conversation and receive the assistant's response
+  - Parameters:
+    - `uuid` (required) - UUID of the existing conversation
+    - `message` (required) - User message to send (max. 2000 characters)
+  - Returns: Assistant response message and any function calls executed during the response
+  - **Note:** Widget conversations cost $0.01 per user message; test conversations are free
+
+### Campaign Tools
+- **`list_campaigns`** - List all campaigns from the Famulor account
+  - Parameters: None
+  - Returns: Array of all campaigns with details including status, settings, and scheduling information
+- **`update_campaign_status`** - Start or stop a campaign in the Famulor system
+  - Parameters:
+    - `campaign_id` (required) - The ID of the campaign to update
+    - `action` (required) - The action to perform: 'start' or 'stop'
+  - Returns: Success message and updated campaign status
+  - **Note:** Starting a campaign requires sufficient leads and balance. Stopping a campaign will cancel ongoing calls.
+
+### Lead Tools
+- **`list_leads`** - List all leads for the authenticated user
+  - Parameters: None
+  - Returns: Array of all leads with details including phone number, status, variables, campaign information, and secondary contacts
+- **`create_lead`** - Create a new lead in the Famulor system
+  - Parameters: 
+    - `phone_number` (required) - The phone number in E.164 format
+    - `campaign_id` (required) - The ID of the campaign
+    - `variables` (optional) - Array of variables to be passed to the lead
+    - `allow_dupplicate` (optional) - Whether duplicate leads are allowed in a campaign
+  - Returns: Created lead information with ID
+  - **Note:** Use `get_assistants` and `get_assistant_details` to get assistant information and variables that can be used when creating leads
+- **`update_lead`** - Update an existing lead in your campaigns
+  - Parameters:
+    - `id` (required) - The ID of the lead to update
+    - `campaign_id` (optional) - The ID of the campaign to assign the lead to
+    - `phone_number` (optional) - The phone number (automatically formatted to E.164)
+    - `status` (optional) - The status: 'created', 'completed', or 'reached-max-retries'
+    - `variables` (optional) - Custom variables to be merged with existing lead variables
+  - Returns: Success message confirming the lead was updated
+
+### SMS Tools
+- **`send_sms`** - Send an SMS message via your phone number
+  - Parameters:
+    - `from` (required) - The ID of your phone number to send the SMS from (must be SMS-capable)
+    - `to` (required) - The recipient's phone number in international format (e.g., "+4915123456789")
+    - `body` (required) - The SMS message content (max. 300 characters)
+  - Returns: Success message and SMS data including SMS ID, segments, cost, and status
+  - **Note:** 
+    - The sender phone number must belong to the authenticated user and be SMS-capable
+    - Sufficient account balance is required to cover SMS costs
+    - SMS costs vary by destination country and are calculated per segment
+    - Long messages may be split into multiple segments, increasing costs
+
+### Mid-Call Tools
+- **`list_mid_call_tools`** - List all mid-call tools that allow AI assistants to interact with external APIs during calls
+  - Parameters: None
+  - Returns: Array of all mid-call tools with details including name, description, endpoint, method, timeout, headers, and schema
+- **`get_mid_call_tool`** - Get detailed information about a specific mid-call tool
+  - Parameters:
+    - `id` (required) - The unique ID of the mid-call tool
+  - Returns: Complete tool information including configuration and schema
+- **`update_mid_call_tool`** - Update an existing mid-call tool
+  - Parameters:
+    - `id` (required) - The unique ID of the tool to update
+    - `name` (optional) - Tool name (lowercase letters and underscores only)
+    - `description` (optional) - Detailed explanation of when and how the AI should use this tool
+    - `endpoint` (optional) - Valid URL of the API endpoint to call
+    - `method` (optional) - HTTP method: GET, POST, PUT, PATCH, or DELETE
+    - `timeout` (optional) - Request timeout in seconds (1-30)
+    - `headers` (optional) - HTTP headers to send with the request
+    - `schema` (optional) - Parameter schema that the AI will extract and send
+  - Returns: Success message and updated tool data
 
 ## Project Structure
 
@@ -447,6 +587,11 @@ Famulor-MCP/
 │   ├── tools/            # Famulor API Tools
 │   │   ├── calls.ts      # Call Operations
 │   │   ├── assistants.ts # Assistant Operations
+│   │   ├── conversations.ts # Conversation Operations
+│   │   ├── campaigns.ts   # Campaign Operations
+│   │   ├── leads.ts       # Lead Operations
+│   │   ├── sms.ts         # SMS Operations
+│   │   ├── midCallTools.ts # Mid-Call Tools Operations
 │   │   └── index.ts      # Tools Export
 │   ├── auth/             # Authentication
 │   │   └── famulor.ts    # Famulor API Client
