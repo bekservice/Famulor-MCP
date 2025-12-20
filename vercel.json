@@ -12,6 +12,10 @@
       "destination": "/api/index"
     },
     {
+      "source": "/oauth-authorization-server",
+      "destination": "/api/index"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api/index"
     }
