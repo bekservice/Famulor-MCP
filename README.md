@@ -166,9 +166,9 @@ Choose your MCP client below for specific installation instructions:
 
 ### For Claude Desktop
 
-#### Option 1: Use Your Own Local Server (Recommended)
+**Important:** Claude Desktop currently only supports local `command`-based MCP server configurations. HTTP/URL-based configurations are not supported, even in the latest version.
 
-**Note:** Most versions of Claude Desktop require the local `command`-based configuration. The `url`-based configuration only works in newer versions.
+#### Setup Instructions
 
 1. **Find your configuration file:**
    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -200,43 +200,9 @@ Choose your MCP client below for specific installation instructions:
    - Replace `your-api-key-here` with your actual Famulor API key
    - You can get your API key at [Famulor API Keys](https://app.famulor.de/api-keys)
    - Make sure you've built the server: `npm run build`
+   - The path must be absolute (not relative)
 
-3. **Restart Claude Desktop** for the changes to take effect.
-
-#### Option 2: Use Online MCP Server (Newer Claude Desktop Versions Only)
-
-**Note:** This option only works with newer versions of Claude Desktop that support HTTP-based MCP connections. If you get an error about missing `command` field, use Option 1 instead.
-
-1. **Find your configuration file:**
-   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-   - **Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-2. **Add the online MCP server configuration:**
-
-   Open the configuration file and add the following to the `mcpServers` section:
-
-   ```json
-   {
-     "mcpServers": {
-       "famulor": {
-         "type": "http",
-         "url": "https://mcp.famulor.io/sse",
-         "headers": {
-           "Authorization": "Bearer your-api-key-here"
-         }
-       }
-     }
-   }
-   ```
-
-   **Important:**
-   - Replace `your-api-key-here` with your actual Famulor API key
-   - The API key must be prefixed with `Bearer ` in the Authorization header
-   - You can get your API key at [Famulor API Keys](https://app.famulor.de/api-keys)
-   - If this doesn't work, use Option 1 (local server) instead
-
-3. **Restart Claude Desktop** for the changes to take effect.
+3. **Restart Claude Desktop completely** for the changes to take effect.
 
 ### For Cursor
 
