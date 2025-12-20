@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "famulor": {
+      "command": "node",
+      "args": [
+        "/ABSOLUTE/PATH/TO/famulor-mcp/dist/index.js"
+      ],
+      "env": {
+        "FAMULOR_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+
