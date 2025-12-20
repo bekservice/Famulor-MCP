@@ -7,7 +7,7 @@ An MCP (Model Context Protocol) server for the **Famulor Voice Agent Platform** 
 
 ## Overview
 
-This MCP server provides access to the Famulor Voice Agent Platform, allowing users to make AI-powered phone calls, manage voice assistants, and retrieve call transcripts and recordings - all directly from ChatGPT Desktop App or other MCP clients.
+This MCP server provides access to the Famulor Voice Agent Platform, allowing users to make AI-powered phone calls, manage voice assistants, and retrieve call transcripts and recordings - all directly from any MCP-compatible client like ChatGPT Desktop, Claude Desktop, or other MCP-compatible applications.
 
 ## Features
 
@@ -19,7 +19,10 @@ This MCP server provides access to the Famulor Voice Agent Platform, allowing us
 ## Prerequisites
 
 - **Node.js** >= 20.0.0 ([Download](https://nodejs.org/))
-- **ChatGPT Desktop App** ([Download](https://chatgpt.com/download)) or another MCP-compatible client
+- **An MCP-compatible client** such as:
+  - ChatGPT Desktop App ([Download](https://chatgpt.com/download))
+  - Claude Desktop App ([Download](https://claude.ai/download))
+  - Any other MCP-compatible client
 - A **Famulor API key** ([Get one here](https://app.famulor.de/api-keys))
 
 ## Quick Start
@@ -50,9 +53,11 @@ npm run build
 3. Create a new API key
 4. Copy the API key (you'll need it in the next step)
 
-### 5. Configure MCP in ChatGPT Desktop App
+### 5. Configure MCP in Your Client
 
-Create or edit the MCP configuration file for your platform:
+Create or edit the MCP configuration file for your platform and client:
+
+**For ChatGPT Desktop App:**
 
 #### macOS
 ```bash
@@ -71,6 +76,27 @@ nano ~/Library/Application\ Support/ChatGPT/mcp.json
 mkdir -p ~/.config/ChatGPT
 nano ~/.config/ChatGPT/mcp.json
 ```
+
+**For Claude Desktop App:**
+
+#### macOS
+```bash
+mkdir -p ~/Library/Application\ Support/Claude
+nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+#### Windows
+```
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+#### Linux
+```bash
+mkdir -p ~/.config/Claude
+nano ~/.config/Claude/claude_desktop_config.json
+```
+
+**Note:** For Claude Desktop, add the MCP server configuration to the `mcpServers` section in `claude_desktop_config.json`. The structure is the same as shown below.
 
 Add the following configuration (replace the path with your actual path):
 
@@ -100,15 +126,15 @@ Add the following configuration (replace the path with your actual path):
 - Windows: `C:/Users/username/Famulor-MCP/dist/index.js` or `C:\\Users\\username\\Famulor-MCP\\dist\\index.js`
 - Linux: `/home/username/Famulor-MCP/dist/index.js`
 
-### 6. Restart ChatGPT Desktop App
+### 6. Restart Your MCP Client
 
-1. Close the ChatGPT Desktop App completely
+1. Close your MCP client (ChatGPT Desktop, Claude Desktop, etc.) completely
 2. Restart it
 3. The MCP server should be automatically connected
 
 ### 7. Test It!
 
-In ChatGPT, try asking:
+In your MCP client (ChatGPT, Claude, etc.), try asking:
 - "Show me my Famulor assistants"
 - "List my recent calls"
 - "Make a call with assistant [ID] to [phone number]"
@@ -213,10 +239,10 @@ Famulor-MCP/
 - Check that the API key hasn't expired
 
 ### MCP Server Not Recognized
-- Check the JSON syntax in `mcp.json` (use a JSON validator)
+- Check the JSON syntax in your MCP config file (use a JSON validator)
 - Ensure the path to `dist/index.js` is absolute
-- Restart ChatGPT Desktop App completely
-- Check ChatGPT's logs for error messages
+- Restart your MCP client completely (ChatGPT Desktop, Claude Desktop, etc.)
+- Check your client's logs for error messages
 
 ### Node.js Version Issues
 - Verify Node.js version: `node --version` (must be >= 20.0.0)
@@ -224,24 +250,26 @@ Famulor-MCP/
 
 ## About MCP
 
-This is a **Model Context Protocol (MCP) Server** that provides access to the Famulor Voice Agent Platform. MCP is a protocol that allows AI assistants like ChatGPT to securely connect to external data sources and tools.
+This is a **Model Context Protocol (MCP) Server** that provides access to the Famulor Voice Agent Platform. MCP is a protocol that allows AI assistants like ChatGPT, Claude, and other AI tools to securely connect to external data sources and tools.
 
-The server exposes Famulor's voice agent capabilities as MCP tools, enabling ChatGPT Desktop App and other MCP-compatible clients to interact with the Famulor platform.
+The server exposes Famulor's voice agent capabilities as MCP tools, enabling any MCP-compatible client (ChatGPT Desktop, Claude Desktop, or other MCP applications) to interact with the Famulor platform.
 
 ## Security
 
 - ✅ Each user configures their own API key
-- ✅ API keys are stored locally in `mcp.json` (encrypted by ChatGPT Desktop App)
+- ✅ API keys are stored locally in your MCP config file (encrypted by your MCP client)
 - ✅ No API keys are sent over the network (stdio is local)
-- ❌ **Never commit `mcp.json` with API keys to version control**
+- ❌ **Never commit your MCP config file with API keys to version control**
 - ❌ **Never share your API key publicly**
 
 ## Resources
 
-- [Famulor Voice Agent Platform](https://app.famulor.io)
+- [Famulor Voice Agent Homepage](https://www.famulor.io)
+- [Famulor Voice Agent Platform](https://app.famulor.de)
 - [Famulor API Documentation](https://docs.famulor.io/api-reference/)
 - [MCP Protocol Documentation](https://modelcontextprotocol.io/)
 - [ChatGPT Desktop App](https://chatgpt.com/download)
+- [Claude Desktop App](https://claude.ai/download)
 - [GitHub Repository](https://github.com/bekservice/Famulor-MCP)
 
 ## Contributing

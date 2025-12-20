@@ -1,12 +1,15 @@
 # ⚡ Quick Start Guide
 
-This guide will help you get the Famulor MCP Server up and running with ChatGPT Desktop App in just a few minutes.
+This guide will help you get the Famulor MCP Server up and running with any MCP-compatible client (ChatGPT Desktop, Claude Desktop, etc.) in just a few minutes.
 
 ## Prerequisites
 
 Before you begin, make sure you have:
 - ✅ Node.js >= 20.0.0 installed ([Download](https://nodejs.org/))
-- ✅ ChatGPT Desktop App installed ([Download](https://chatgpt.com/download))
+- ✅ An MCP-compatible client installed:
+  - ChatGPT Desktop App ([Download](https://chatgpt.com/download))
+  - Claude Desktop App ([Download](https://claude.ai/download))
+  - Or any other MCP-compatible client
 - ✅ A Famulor account and API key ([Get one here](https://app.famulor.de/api-keys))
 
 ## Step-by-Step Setup
@@ -39,21 +42,17 @@ This creates the `dist/` folder with the compiled JavaScript files.
 
 ### Step 4: Configure MCP
 
-Create the MCP configuration file for your operating system:
+Create the MCP configuration file for your operating system and client:
 
-#### macOS
+#### For ChatGPT Desktop App
 
+**macOS:**
 ```bash
-# Create the directory if it doesn't exist
 mkdir -p ~/Library/Application\ Support/ChatGPT
-
-# Open the configuration file
 nano ~/Library/Application\ Support/ChatGPT/mcp.json
 ```
 
-#### Windows
-
-Create or edit the file at:
+**Windows:**
 ```
 C:\Users\YourUsername\AppData\Roaming\ChatGPT\mcp.json
 ```
@@ -64,15 +63,32 @@ New-Item -ItemType Directory -Force -Path "$env:APPDATA\ChatGPT"
 notepad "$env:APPDATA\ChatGPT\mcp.json"
 ```
 
-#### Linux
-
+**Linux:**
 ```bash
-# Create the directory if it doesn't exist
 mkdir -p ~/.config/ChatGPT
-
-# Open the configuration file
 nano ~/.config/ChatGPT/mcp.json
 ```
+
+#### For Claude Desktop App
+
+**macOS:**
+```bash
+mkdir -p ~/Library/Application\ Support/Claude
+nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+**Windows:**
+```
+C:\Users\YourUsername\AppData\Roaming\Claude\claude_desktop_config.json
+```
+
+**Linux:**
+```bash
+mkdir -p ~/.config/Claude
+nano ~/.config/Claude/claude_desktop_config.json
+```
+
+**Note:** For Claude Desktop, the configuration structure is the same, but the file is named `claude_desktop_config.json` and should contain an `mcpServers` section.
 
 ### Step 5: Add Configuration
 
@@ -109,15 +125,15 @@ Add the following JSON to your `mcp.json` file. **Important:** Replace the place
 - **macOS/Linux:** Run `pwd` in the Famulor-MCP directory
 - **Windows:** Run `cd` in PowerShell/CMD in the Famulor-MCP directory
 
-### Step 6: Restart ChatGPT Desktop App
+### Step 6: Restart Your MCP Client
 
-1. **Completely close** the ChatGPT Desktop App (not just minimize)
+1. **Completely close** your MCP client (ChatGPT Desktop, Claude Desktop, etc.) - not just minimize
 2. **Restart** the app
 3. The MCP server should now be connected automatically
 
 ### Step 7: Verify It Works
 
-Open ChatGPT and try these commands:
+Open your MCP client (ChatGPT, Claude, etc.) and try these commands:
 
 - "Show me my Famulor assistants"
 - "List my recent calls"
@@ -192,7 +208,7 @@ setx FAMULOR_API_KEY "your-api-key-here"
    - Make sure there are no trailing commas
    - Ensure all strings are in double quotes
 
-4. **Restart ChatGPT completely:**
+4. **Restart your MCP client completely:**
    - Quit the app (not just close the window)
    - Wait a few seconds
    - Restart

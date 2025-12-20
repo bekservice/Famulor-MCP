@@ -1,6 +1,6 @@
 # 🚀 MCP Server Setup Guide
 
-This comprehensive guide explains how to set up and run the Famulor MCP Server for use with ChatGPT Desktop App and other MCP-compatible clients.
+This comprehensive guide explains how to set up and run the Famulor MCP Server for use with any MCP-compatible client, including ChatGPT Desktop App, Claude Desktop App, and other MCP-compatible applications.
 
 ## Table of Contents
 
@@ -19,8 +19,10 @@ This comprehensive guide explains how to set up and run the Famulor MCP Server f
   - Check version: `node --version`
   - Download: [nodejs.org](https://nodejs.org/)
   
-- **ChatGPT Desktop App** (or another MCP-compatible client)
-  - Download: [chatgpt.com/download](https://chatgpt.com/download)
+- **An MCP-compatible client** such as:
+  - ChatGPT Desktop App ([Download](https://chatgpt.com/download))
+  - Claude Desktop App ([Download](https://claude.ai/download))
+  - Any other MCP-compatible client
 
 - **Famulor API Key**
   - Get one at: [app.famulor.de/api-keys](https://app.famulor.de/api-keys)
@@ -34,7 +36,7 @@ node --version  # Should be v20.0.0 or higher
 # Check npm version
 npm --version
 
-# Verify ChatGPT Desktop App is installed
+# Verify your MCP client is installed
 # (Check your Applications folder or Start menu)
 ```
 
@@ -71,13 +73,25 @@ npm run build
 
 ### MCP Configuration File Locations
 
-The MCP configuration file location depends on your operating system:
+The MCP configuration file location depends on your operating system and client:
+
+#### For ChatGPT Desktop App
 
 | Platform | Path |
 |----------|------|
 | **macOS** | `~/Library/Application Support/ChatGPT/mcp.json` |
 | **Windows** | `%APPDATA%\ChatGPT\mcp.json` or `C:\Users\YourUsername\AppData\Roaming\ChatGPT\mcp.json` |
 | **Linux** | `~/.config/ChatGPT/mcp.json` |
+
+#### For Claude Desktop App
+
+| Platform | Path |
+|----------|------|
+| **macOS** | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| **Windows** | `%APPDATA%\Claude\claude_desktop_config.json` |
+| **Linux** | `~/.config/Claude/claude_desktop_config.json` |
+
+**Note:** For Claude Desktop, add the MCP server configuration to the `mcpServers` section in `claude_desktop_config.json`. The structure is the same as shown in the configuration examples below.
 
 ### Basic Configuration
 
@@ -122,7 +136,7 @@ Create the `mcp.json` file with the following structure:
 - Works immediately after restart
 
 **Cons:**
-- API key stored in plain text (but encrypted by ChatGPT Desktop App)
+- API key stored in plain text (but encrypted by your MCP client)
 
 #### Option 2: API Key as Environment Variable
 
@@ -184,7 +198,7 @@ set FAMULOR_API_KEY=your-api-key-here
    # Use this path in mcp.json
    ```
 
-5. **Restart ChatGPT Desktop App**
+5. **Restart your MCP client** (ChatGPT Desktop, Claude Desktop, etc.)
 
 ### Windows
 
@@ -211,7 +225,7 @@ set FAMULOR_API_KEY=your-api-key-here
    - Use forward slashes (`/`) or escaped backslashes (`\\`) in paths
    - Example: `C:/Users/John/Famulor-MCP/dist/index.js`
 
-6. **Restart ChatGPT Desktop App**
+6. **Restart your MCP client** (ChatGPT Desktop, Claude Desktop, etc.)
 
 ### Linux
 
@@ -234,14 +248,14 @@ set FAMULOR_API_KEY=your-api-key-here
    # Use this path in mcp.json
    ```
 
-5. **Restart ChatGPT Desktop App**
+5. **Restart your MCP client** (ChatGPT Desktop, Claude Desktop, etc.)
 
 ## Troubleshooting
 
 ### Server Won't Start
 
 **Symptoms:**
-- ChatGPT shows "MCP server not found"
+- Your MCP client shows "MCP server not found"
 - Error messages about the server
 
 **Solutions:**
@@ -273,7 +287,7 @@ set FAMULOR_API_KEY=your-api-key-here
 ### MCP Server Not Recognized
 
 **Symptoms:**
-- Server doesn't appear in ChatGPT
+- Server doesn't appear in your MCP client
 - No tools available
 
 **Solutions:**
@@ -288,12 +302,12 @@ set FAMULOR_API_KEY=your-api-key-here
    - No `~` or relative paths
    - File must exist at that path
 
-3. **Check ChatGPT logs:**
+3. **Check your MCP client logs:**
    - Look for error messages
    - Check console output
 
 4. **Restart completely:**
-   - Quit ChatGPT (not just close window)
+   - Quit your MCP client (not just close window)
    - Wait a few seconds
    - Restart
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Famulor ChatGPT App - MCP Server Entry Point
+ * Famulor MCP Server - Entry Point
  *
- * This MCP server provides Famulor AI calling capabilities to ChatGPT
- * through the OpenAI Apps SDK.
+ * This MCP server provides Famulor AI calling capabilities to any
+ * MCP-compatible client (ChatGPT Desktop, Claude Desktop, etc.)
+ * through the Model Context Protocol (MCP).
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -19,7 +20,7 @@ async function main() {
   // Create MCP server
   const server = new Server(
     {
-      name: 'famulor-chatgpt-app',
+      name: 'famulor-mcp-server',
       version: '0.1.0',
     },
     {
