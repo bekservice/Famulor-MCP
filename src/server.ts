@@ -45,6 +45,11 @@ export async function setupFamulorServer(server: Server): Promise<void> {
   // The client will be created per-request using the user's API key
   await registerAllTools(server);
 
+  // Note: User configuration (API keys) is handled by the OpenAI Apps SDK
+  // When users connect via the App Store, the Apps SDK passes the API key
+  // in the request context. We access it via server.userConfig or server.config
+  // which is populated by the Apps SDK automatically.
+
   // List tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
