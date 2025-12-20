@@ -68,7 +68,16 @@ app.get('/sse', async (req: Request, res: Response) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Extract API key from Authorization header if present
+  // Format: "Bearer <api-key>" or just "<api-key>"
+  let apiKey: string | undefined;
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    // Remove "Bearer " prefix if present
+    apiKey = authHeader.replace(/^Bearer\s+/i, '').trim();
+  }
 
   // Create MCP server instance
   const mcpServer = new Server(
@@ -82,6 +91,13 @@ app.get('/sse', async (req: Request, res: Response) => {
       },
     }
   );
+
+  // Store API key in server config for use by tools
+  if (apiKey) {
+    (mcpServer as any).userConfig = {
+      famulor_api_key: apiKey,
+    };
+  }
 
   // Setup Famulor tools and handlers
   await setupFamulorServer(mcpServer);
@@ -102,7 +118,7 @@ app.get('/sse', async (req: Request, res: Response) => {
 app.options('/sse', (req: Request, res: Response) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.sendStatus(200);
 });
 
