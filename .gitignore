@@ -6,6 +6,12 @@ package-lock.json
 dist/
 *.tsbuildinfo
 
+# Compiled API files (Vercel compiles TypeScript automatically)
+api/*.js
+api/*.js.map
+api/*.d.ts
+api/*.d.ts.map
+
 # Environment variables
 .env
 .env.local
