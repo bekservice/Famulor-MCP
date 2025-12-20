@@ -20,7 +20,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // OAuth configuration handler function
-// Returns null to indicate OAuth is not supported
+// Returns a minimal OAuth config indicating OAuth is not supported
 const handleOAuthConfig = (req: Request, res: Response) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -28,33 +28,38 @@ const handleOAuthConfig = (req: Request, res: Response) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Content-Type', 'application/json');
   
-  // Return null to indicate OAuth is not available
-  // This allows the client to fall back to API key authentication
-  res.status(200).json(null);
+  // Return a minimal OAuth configuration that indicates OAuth is not available
+  // This is a valid OAuth metadata response but with empty/null values
+  res.status(200).json({
+    issuer: null,
+    authorization_endpoint: null,
+    token_endpoint: null,
+    // Indicate that OAuth is not supported
+    oauth_supported: false
+  });
 };
 
-// OAuth configuration endpoint at root level
-// ChatGPT may check this at: https://mcp.famulor.io/oauth-authorization-server
+// OAuth configuration endpoints - ChatGPT may check any of these:
+// Standard OAuth discovery endpoints
+app.get('/.well-known/oauth-authorization-server', handleOAuthConfig);
 app.get('/oauth-authorization-server', handleOAuthConfig);
 
-// OAuth configuration endpoint under /sse path
-// ChatGPT may check this at: https://mcp.famulor.io/sse/oauth-authorization-server
+// Endpoints relative to /sse path
+app.get('/sse/.well-known/oauth-authorization-server', handleOAuthConfig);
 app.get('/sse/oauth-authorization-server', handleOAuthConfig);
 
-// CORS preflight for OAuth endpoints
-app.options('/oauth-authorization-server', (req: Request, res: Response) => {
+// CORS preflight for all OAuth endpoints
+const handleOAuthOptions = (req: Request, res: Response) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.sendStatus(200);
-});
+};
 
-app.options('/sse/oauth-authorization-server', (req: Request, res: Response) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.sendStatus(200);
-});
+app.options('/.well-known/oauth-authorization-server', handleOAuthOptions);
+app.options('/oauth-authorization-server', handleOAuthOptions);
+app.options('/sse/.well-known/oauth-authorization-server', handleOAuthOptions);
+app.options('/sse/oauth-authorization-server', handleOAuthOptions);
 
 // MCP Server-Sent Events endpoint
 app.get('/sse', async (req: Request, res: Response) => {
