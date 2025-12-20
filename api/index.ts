@@ -19,13 +19,41 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'famulor-mcp-server' });
 });
 
-// OAuth configuration endpoint
-// Returns null/empty to indicate OAuth is not supported
-// The server uses API key authentication instead (configured via Apps SDK)
-app.get('/oauth-authorization-server', (req: Request, res: Response) => {
-  // Return null to indicate OAuth is not supported
-  // OpenAI Apps SDK will handle API key authentication instead
+// OAuth configuration handler function
+// Returns null to indicate OAuth is not supported
+const handleOAuthConfig = (req: Request, res: Response) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
+  
+  // Return null to indicate OAuth is not available
+  // This allows the client to fall back to API key authentication
   res.status(200).json(null);
+};
+
+// OAuth configuration endpoint at root level
+// ChatGPT may check this at: https://mcp.famulor.io/oauth-authorization-server
+app.get('/oauth-authorization-server', handleOAuthConfig);
+
+// OAuth configuration endpoint under /sse path
+// ChatGPT may check this at: https://mcp.famulor.io/sse/oauth-authorization-server
+app.get('/sse/oauth-authorization-server', handleOAuthConfig);
+
+// CORS preflight for OAuth endpoints
+app.options('/oauth-authorization-server', (req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(200);
+});
+
+app.options('/sse/oauth-authorization-server', (req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(200);
 });
 
 // MCP Server-Sent Events endpoint
