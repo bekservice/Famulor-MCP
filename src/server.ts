@@ -113,24 +113,19 @@ export async function setupFamulorServer(server: Server): Promise<void> {
         // Assistant tools
         {
           name: 'get_assistants',
-          description: 'Get all available AI assistants from the Famulor account',
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-        {
-          name: 'get_assistant_details',
-          description: 'Get detailed information about a specific assistant',
+          description: 'Get all available AI assistants from the Famulor account (paginated)',
           inputSchema: {
             type: 'object',
             properties: {
-              assistant_id: {
-                type: 'string',
-                description: 'The ID of the assistant',
+              page: {
+                type: 'number',
+                description: 'Page number (default: 1)',
+              },
+              per_page: {
+                type: 'number',
+                description: 'Number of assistants per page (default: 10)',
               },
             },
-            required: ['assistant_id'],
           },
         },
         {

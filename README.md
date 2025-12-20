@@ -433,9 +433,11 @@ npm run format
   - Parameters: `assistant_id` (optional), `limit` (optional)
 
 ### Assistant Tools
-- **`get_assistants`** - Get all available AI assistants
-- **`get_assistant_details`** - Get detailed information about a specific assistant
-  - Parameters: `assistant_id`
+- **`get_assistants`** - Get all available AI assistants (paginated)
+  - Parameters:
+    - `page` (optional) - Page number (default: 1)
+    - `per_page` (optional) - Number of assistants per page (default: 10)
+  - Returns: Paginated response with `data` array containing assistants and pagination metadata (`current_page`, `per_page`, `total`, `last_page`, `next_page_url`, etc.)
 - **`get_phone_numbers`** - Get all available phone numbers for assistant assignment
   - Parameters:
     - `type` (optional) - Filter phone numbers by assistant type: 'inbound' or 'outbound'
@@ -534,7 +536,7 @@ npm run format
     - `variables` (optional) - Array of variables to be passed to the lead
     - `allow_dupplicate` (optional) - Whether duplicate leads are allowed in a campaign
   - Returns: Created lead information with ID
-  - **Note:** Use `get_assistants` and `get_assistant_details` to get assistant information and variables that can be used when creating leads
+  - **Note:** Use `get_assistants` to get assistant information and variables that can be used when creating leads
 - **`update_lead`** - Update an existing lead in your campaigns
   - Parameters:
     - `id` (required) - The ID of the lead to update

@@ -74,7 +74,6 @@ export async function registerAllTools(server: Server): Promise<void> {
     if (
       [
         'get_assistants',
-        'get_assistant_details',
         'get_phone_numbers',
         'get_models',
         'get_voices',

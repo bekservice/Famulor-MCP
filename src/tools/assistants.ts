@@ -14,21 +14,24 @@ export async function handleAssistantTools(
   try {
     switch (name) {
       case 'get_assistants': {
-        const result = await client.get('/api/user/assistants');
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
+        const { page, per_page } = args as {
+          page?: number;
+          per_page?: number;
         };
-      }
 
-      case 'get_assistant_details': {
-        const { assistant_id } = args as { assistant_id: string };
-        const result = await client.get(`/api/user/assistants/${assistant_id}`);
+        let endpoint = '/api/user/assistants/get';
+        const params: string[] = [];
+        if (page !== undefined) {
+          params.push(`page=${page}`);
+        }
+        if (per_page !== undefined) {
+          params.push(`per_page=${per_page}`);
+        }
+        if (params.length > 0) {
+          endpoint += `?${params.join('&')}`;
+        }
+
+        const result = await client.get(endpoint);
 
         return {
           content: [
