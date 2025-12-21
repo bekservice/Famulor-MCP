@@ -3,7 +3,7 @@
 An MCP (Model Context Protocol) server for the **Famulor Voice Agent Platform** that enables AI-powered phone calls, assistant management, and call data retrieval through ChatGPT and other MCP-compatible clients.
 
 [![GitHub](https://img.shields.io/badge/GitHub-bekservice/Famulor--MCP-blue)](https://github.com/bekservice/Famulor-MCP)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![License](https://img.shields.io/badge/license-Famulor%20Only-orange)](LICENSE)
 
 ![Famulor MCP Server](https://www.famulor.io/_next/image?url=https%3A%2F%2Fanzpxaqhcbkfyqdk.public.blob.vercel-storage.com%2Fblog-images%2F1766256900040-79z4hr1mztw.webp&w=3840&q=75)
 
@@ -678,7 +678,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT
+Proprietary License - Use allowed for Famulor users only
+
+This software may be used, copied, and modified only if you are using the 
+Famulor Voice Agent Platform. See [LICENSE](LICENSE) file for full details.
 
 ## Author
 
