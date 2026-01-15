@@ -12,14 +12,6 @@
       "destination": "/api/index"
     },
     {
-      "source": "/.well-known/oauth-authorization-server",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/oauth-authorization-server",
-      "destination": "/api/index"
-    },
-    {
       "source": "/(.*)",
       "destination": "/api/index"
     }

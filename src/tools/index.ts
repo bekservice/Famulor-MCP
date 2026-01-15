@@ -27,44 +27,27 @@ import { handleSmsTools } from './sms.js';
  * through the ChatGPT/Claude UI, which will be stored in userConfig.
  */
 function getClientFromConfig(server: Server): FamulorClient {
-  // Try userConfig first (set via Config API by user in UI or OAuth)
+  // Try userConfig first (set via Config API by user in UI)
   const userConfig = (server as any).userConfig || {};
   let apiKey = userConfig.famulor_api_key;
-  let oauthToken = userConfig.oauth_token;
 
   // Fallback to legacy config
-  if (!apiKey && !oauthToken) {
+  if (!apiKey) {
     const config = (server as any).config || {};
     apiKey = config.famulor_api_key;
-    oauthToken = config.oauth_token;
   }
 
   // Fallback to environment variable (development/testing only)
   // This should NOT be used in production
-  if (!apiKey && !oauthToken) {
+  if (!apiKey) {
     apiKey = process.env.FAMULOR_API_KEY;
   }
 
-  if (!apiKey && !oauthToken) {
+  if (!apiKey) {
     throw new Error(
       'Authentication not configured.\n\n' +
-      'Please either:\n' +
-      '1. Configure your API key in the app settings, or\n' +
-      '2. Authenticate via OAuth\n\n' +
-      'To get your API key: https://app.famulor.de/api-keys\n\n' +
-      'For OAuth: The app will prompt you to authenticate when needed.'
-    );
-  }
-
-  // If we have an OAuth token, we need to exchange it for an API key
-  // In a real implementation, you'd validate the token and get the associated API key
-  if (oauthToken && !apiKey) {
-    // For now, we'll throw an error indicating OAuth is not fully implemented
-    // In production, you'd look up the API key associated with the OAuth token
-    throw new Error(
-      'OAuth authentication detected but API key mapping not implemented.\n\n' +
-      'Please use API key authentication for now.\n' +
-      'You can get your API key here: https://app.famulor.de/api-keys'
+      'Please configure your API key in the app settings.\n\n' +
+      'To get your API key: https://app.famulor.de/api-keys'
     );
   }
 
