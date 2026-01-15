@@ -168,7 +168,7 @@ async function validateOAuthToken(token: string): Promise<{ valid: boolean; clie
     });
 
     if (response.ok) {
-      const tokenData = await response.json();
+      const tokenData = await response.json() as { client_id?: string; scope?: string };
       return {
         valid: true,
         client_id: tokenData.client_id,
