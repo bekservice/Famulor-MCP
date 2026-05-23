@@ -10,8 +10,9 @@
  *   GET  /authorize                                 → renders API-key entry form
  *   POST /authorize                                 → exchanges the API key for an authorization code
  *   POST /token                                     → exchanges authorization code for an access token (PKCE)
- *   POST /mcp                                       → Streamable HTTP MCP transport
- *   GET  /mcp                                       → Streamable HTTP MCP transport (SSE long-poll)
+ *   POST /mcp                                       → Streamable HTTP MCP transport (client → server)
+ *   GET  /mcp                                       → Streamable HTTP MCP transport (optional server stream)
+ *   DELETE /mcp                                     → Streamable HTTP MCP transport (session close)
  *
  * Tokens are stateless — the Famulor API key is encrypted (AES-256-GCM) into
  * the access token using MCP_SECRET. No database is required.

@@ -3,13 +3,13 @@
   "version": "0.2.0",
   "description": "MCP Server for Famulor Voice Agent Platform - AI-powered phone calling and voice assistant management",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "tsc",
     "vercel-build": "npm run build",
     "dev": "tsx watch src/index.ts",
     "dev:http": "tsx watch scripts/serve.ts",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
