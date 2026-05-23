@@ -69,8 +69,34 @@ app.use((req, res, next) => {
 
 // ─── Public metadata ──────────────────────────────────────────────────────────
 
+// Legacy SSE-style probes: redirect clients to the Streamable HTTP endpoint.
+// Some MCP clients (and copy-paste typos) hit /sse first. Returning JSON here
+// keeps the probe from failing with "unsupported content type: text/html".
+app.all(['/sse', '/messages', '/events'], (req, res) => {
+  const issuer = resolveIssuer(req);
+  res.status(410).json({
+    error: 'gone',
+    error_description:
+      'This server uses Streamable HTTP, not SSE. Configure your client with the URL below.',
+    mcp_endpoint: `${issuer}/mcp`,
+    transport: 'streamable-http',
+  });
+});
+
 app.get('/', (req, res) => {
   const issuer = resolveIssuer(req);
+  // If a tool tries an SSE probe against the root, respond with JSON so we
+  // never return text/html on an event-stream request.
+  const accept = (req.headers.accept ?? '').toLowerCase();
+  if (accept.includes('text/event-stream') && !accept.includes('text/html')) {
+    res.status(400).json({
+      error: 'wrong_path',
+      error_description: 'MCP endpoint is /mcp, not /. Update your client URL.',
+      mcp_endpoint: `${issuer}/mcp`,
+      transport: 'streamable-http',
+    });
+    return;
+  }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.end(`<!doctype html>
 <html><head><meta charset="utf-8"><title>Famulor MCP</title>
@@ -99,6 +125,18 @@ a{color:#0c8fc4}
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'famulor-mcp', version: '0.2.0' });
+});
+
+// ChatGPT App Store domain verification — the OpenAI Apps directory probes
+// /.well-known/openai-apps-challenge and expects the configured token back
+// as text/plain. The token is set per environment in OPENAI_APPS_CHALLENGE_TOKEN.
+app.get('/.well-known/openai-apps-challenge', (_req, res) => {
+  const token = process.env.OPENAI_APPS_CHALLENGE_TOKEN;
+  if (!token) {
+    res.status(404).type('text/plain').send('OPENAI_APPS_CHALLENGE_TOKEN env var is not set on this deployment.');
+    return;
+  }
+  res.type('text/plain').send(token);
 });
 
 app.get(['/logo.png', '/logo.svg', '/favicon.ico'], (_req, res) => {
