@@ -69,13 +69,13 @@ app.use((req, res, next) => {
 
 // ─── Public metadata ──────────────────────────────────────────────────────────
 
-// Legacy SSE-style probes: redirect clients to the Streamable HTTP endpoint.
-// Some MCP clients (and copy-paste typos) hit /sse first. Returning JSON here
-// keeps the probe from failing with "unsupported content type: text/html".
+// Legacy SSE-style probes: clients sometimes probe these paths before falling
+// back to Streamable HTTP. Return 404 (clean "not here") with a JSON pointer
+// to the real endpoint — never 4xx-error and never text/html.
 app.all(['/sse', '/messages', '/events'], (req, res) => {
   const issuer = resolveIssuer(req);
-  res.status(410).json({
-    error: 'gone',
+  res.status(404).json({
+    error: 'not_found',
     error_description:
       'This server uses Streamable HTTP, not SSE. Configure your client with the URL below.',
     mcp_endpoint: `${issuer}/mcp`,
@@ -85,15 +85,19 @@ app.all(['/sse', '/messages', '/events'], (req, res) => {
 
 app.get('/', (req, res) => {
   const issuer = resolveIssuer(req);
-  // If a tool tries an SSE probe against the root, respond with JSON so we
-  // never return text/html on an event-stream request.
+  // Non-browser probes (no text/html in Accept) get a 200 with a JSON
+  // pointer to the real MCP endpoint. Returning a 4xx here makes ChatGPT's
+  // tool-scan abort; returning text/html makes it complain about content type.
+  // A 200 + application/json with a self-describing body satisfies both.
   const accept = (req.headers.accept ?? '').toLowerCase();
-  if (accept.includes('text/event-stream') && !accept.includes('text/html')) {
-    res.status(400).json({
-      error: 'wrong_path',
-      error_description: 'MCP endpoint is /mcp, not /. Update your client URL.',
-      mcp_endpoint: `${issuer}/mcp`,
+  if (!accept.includes('text/html')) {
+    res.status(200).json({
+      service: 'famulor-mcp',
+      version: '0.2.0',
       transport: 'streamable-http',
+      mcp_endpoint: `${issuer}/mcp`,
+      oauth_metadata: `${issuer}/.well-known/oauth-authorization-server`,
+      resource_metadata: `${issuer}/.well-known/oauth-protected-resource`,
     });
     return;
   }
