@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://mcp.famulor.io/logo.svg" alt="Famulor" width="80" height="80" />
+  <img src="https://mcp.famulor.io/logo.png" alt="Famulor" width="80" height="80" />
 </p>
 
 <h1 align="center">Famulor MCP</h1>

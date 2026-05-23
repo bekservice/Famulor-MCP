@@ -1,6 +1,39 @@
 /**
- * Famulor brand mark — inline SVG so we don't need a static-files pipeline on Vercel.
- * Cyan rounded square (#29C5F6) with a white serif "F", matching app.famulor.de.
+ * Famulor brand assets served by the MCP server.
+ *
+ * The PNG is the official Famulor app icon (cyan rounded square + white serif F),
+ * embedded at build time so we don't depend on a separate static-files pipeline
+ * on Vercel. Loaded from assets/famulor-logo.png relative to this file.
  */
 
-export const FAMULOR_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Famulor"><rect width="512" height="512" rx="96" ry="96" fill="#29C5F6"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="Georgia, 'Times New Roman', Times, serif" font-weight="700" font-size="380" fill="#FFFFFF" style="letter-spacing:-8px">F</text></svg>`;
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+// Walk up from src/auth → src → repo root, then into assets/.
+// At runtime on Vercel, the compiled JS lives under dist/src/auth/, so this
+// resolves to dist/../../assets/famulor-logo.png — Vercel includes static
+// files matched by includeFiles. We try a couple of candidate paths so the
+// same code works in source (tsx) and dist (node) modes.
+const CANDIDATES = [
+  join(HERE, '..', '..', 'assets', 'famulor-logo.png'),       // src/auth → repo
+  join(HERE, '..', '..', '..', 'assets', 'famulor-logo.png'), // dist/src/auth → repo
+  join(process.cwd(), 'assets', 'famulor-logo.png'),          // cwd fallback
+];
+
+function loadLogo(): Buffer {
+  for (const p of CANDIDATES) {
+    try {
+      return readFileSync(p);
+    } catch {
+      /* try next */
+    }
+  }
+  throw new Error(
+    `Famulor logo not found. Tried: ${CANDIDATES.join(', ')}`
+  );
+}
+
+export const FAMULOR_LOGO_PNG: Buffer = loadLogo();
+export const FAMULOR_LOGO_MEDIA_TYPE = 'image/png';

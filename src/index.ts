@@ -15,18 +15,18 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { setupFamulorServer } from './server.js';
+import { FAMULOR_INSTRUCTIONS } from './auth/instructions.js';
 
 async function main() {
   // Create MCP server
   const server = new Server(
     {
-      name: 'famulor-mcp-server',
-      version: '0.1.0',
+      name: 'famulor-mcp',
+      version: '0.2.0',
     },
     {
-      capabilities: {
-        tools: {},
-      },
+      capabilities: { tools: {} },
+      instructions: FAMULOR_INSTRUCTIONS,
     }
   );
 

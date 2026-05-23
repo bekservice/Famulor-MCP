@@ -32,7 +32,8 @@ import {
   OAuthError,
 } from '../src/auth/oauth.js';
 import { renderAuthorizePage } from '../src/auth/authorizePage.js';
-import { FAMULOR_LOGO_SVG } from '../src/auth/logo.js';
+import { FAMULOR_LOGO_PNG, FAMULOR_LOGO_MEDIA_TYPE } from '../src/auth/logo.js';
+import { FAMULOR_INSTRUCTIONS } from '../src/auth/instructions.js';
 
 const app = express();
 
@@ -73,7 +74,7 @@ app.get('/', (req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.end(`<!doctype html>
 <html><head><meta charset="utf-8"><title>Famulor MCP</title>
-<link rel="icon" href="/logo.svg" type="image/svg+xml" />
+<link rel="icon" href="/logo.png" type="image/png" />
 <style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:680px;margin:60px auto;padding:0 20px;color:#111;line-height:1.6}
 code{background:#f4f4f6;padding:2px 6px;border-radius:4px;font-size:90%}
@@ -85,7 +86,7 @@ a{color:#0c8fc4}
 </style>
 </head><body>
 <div class="header">
-  <img src="/logo.svg" alt="Famulor" />
+  <img src="/logo.png" alt="Famulor" />
   <h1>Famulor MCP server</h1>
 </div>
 <p>Connect this server in your MCP client to control your Famulor voice agents, leads, calls, campaigns and knowledge bases.</p>
@@ -100,17 +101,12 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'famulor-mcp', version: '0.2.0' });
 });
 
-app.get('/logo.svg', (_req, res) => {
-  res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+app.get(['/logo.png', '/logo.svg', '/favicon.ico'], (_req, res) => {
+  // All three paths serve the same official Famulor app icon (PNG).
+  // /logo.svg kept for backwards compatibility with the old route name.
+  res.setHeader('Content-Type', FAMULOR_LOGO_MEDIA_TYPE);
   res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-  res.end(FAMULOR_LOGO_SVG);
-});
-
-app.get('/favicon.ico', (_req, res) => {
-  // Browsers happily render SVG when the content-type is right.
-  res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-  res.end(FAMULOR_LOGO_SVG);
+  res.end(FAMULOR_LOGO_PNG);
 });
 
 app.get('/.well-known/oauth-authorization-server', (req, res) => {
@@ -128,7 +124,7 @@ app.get('/.well-known/oauth-authorization-server', (req, res) => {
     service_documentation: 'https://docs.famulor.io',
     op_policy_uri: 'https://famulor.de/privacy',
     op_tos_uri: 'https://famulor.de/terms',
-    logo_uri: `${issuer}/logo.svg`,
+    logo_uri: `${issuer}/logo.png`,
   });
 });
 
@@ -141,7 +137,7 @@ function resourceMetadata(req: Request) {
     bearer_methods_supported: ['header'],
     resource_name: 'Famulor MCP',
     resource_documentation: 'https://docs.famulor.io',
-    resource_logo_uri: `${issuer}/logo.svg`,
+    resource_logo_uri: `${issuer}/logo.png`,
   };
 }
 
@@ -170,7 +166,7 @@ app.post('/register', (req, res) => {
     grant_types: ['authorization_code'],
     response_types: ['code'],
     token_endpoint_auth_method: 'none',
-    logo_uri: `${issuer}/logo.svg`,
+    logo_uri: `${issuer}/logo.png`,
   });
 });
 
@@ -355,7 +351,10 @@ async function handleMcp(req: Request, res: Response) {
 
   const mcpServer = new Server(
     { name: 'famulor-mcp', version: '0.2.0' },
-    { capabilities: { tools: {} } }
+    {
+      capabilities: { tools: {} },
+      instructions: FAMULOR_INSTRUCTIONS,
+    }
   );
   (mcpServer as any).userConfig = { famulor_api_key: apiKey };
 

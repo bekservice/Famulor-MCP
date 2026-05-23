@@ -1,0 +1,89 @@
+{
+  "$schema": "https://platform.openai.com/schemas/chatgpt-app-submission.v1.json",
+  "app_name": "Famulor",
+  "subtitle": "Manage AI voice agents & calls",
+  "description": "Famulor connects your AI voice agents to ChatGPT. Create and update assistants, search and purchase phone numbers, run outbound campaigns, manage leads and knowledge bases, send SMS or WhatsApp, and review call transcripts and recordings — all by chatting with ChatGPT.\n\nBring your own Famulor account. Sign in with your API key once and ChatGPT can:\n• Create AI phone assistants and configure their voice, language, and behavior\n• Make outbound calls and review call transcripts and recordings\n• Run and pause outbound campaigns, add leads with custom variables\n• Build knowledge bases from URLs your assistant can answer from\n• Send WhatsApp template or freeform messages, and SMS\n• Hand a conversation off between AI and a human agent\n\nBest for support teams, sales operations, AI agencies, and anyone running an AI receptionist, appointment booker, or outbound caller on Famulor.\n\nFamulor is operated by BEK Service GmbH in Germany. Data is processed and stored on EU servers and the platform is fully GDPR (DSGVO) compliant.",
+  "category": "Productivity",
+  "developer": {
+    "name": "BEK Service GmbH",
+    "legal_entity": "BEK Service GmbH",
+    "address": "Westendstr. 2A, 87439 Kempten (Allgäu), Germany",
+    "country": "DE"
+  },
+  "website_url": "https://www.famulor.io",
+  "support": {
+    "email": "support@famulor.io",
+    "url": "https://www.famulor.io"
+  },
+  "legal": {
+    "privacy_policy_url": "https://www.famulor.io/privacy",
+    "terms_of_service_url": "https://www.famulor.io/terms",
+    "data_processing_agreement_url": "https://www.famulor.io/dpa"
+  },
+  "demo_recording_url": "REPLACE_WITH_UPLOADED_DEMO_VIDEO_URL",
+  "commerce": {
+    "involves_sales": true,
+    "in_chatgpt_digital_goods": false,
+    "links_out_for_purchases": true,
+    "purchase_notes": "Phone number purchases and Famulor subscriptions are handled on famulor.io. No digital goods are sold inside ChatGPT."
+  },
+  "connection": {
+    "type": "mcp",
+    "transport": "streamable-http",
+    "url": "https://mcp.famulor.io/mcp",
+    "oauth": {
+      "authorization_server_metadata_url": "https://mcp.famulor.io/.well-known/oauth-authorization-server",
+      "protected_resource_metadata_url": "https://mcp.famulor.io/.well-known/oauth-protected-resource",
+      "scopes": ["mcp"],
+      "pkce_methods": ["S256"],
+      "dynamic_client_registration": true
+    },
+    "auth_instructions": "When prompted, paste your Famulor API key from https://app.famulor.de/api-keys. The key is encrypted into the access token and never stored on our servers."
+  },
+  "branding": {
+    "logo_url": "https://mcp.famulor.io/logo.png",
+    "primary_color": "#29C5F6"
+  },
+  "languages": ["en", "de"],
+  "regions": ["DE", "EU", "global"],
+  "compliance": {
+    "gdpr": true,
+    "data_residency": "EU (Germany)",
+    "data_handling_notes": "All call audio, transcripts and customer data are processed and stored on servers located in Germany. A Data Processing Agreement is available at https://www.famulor.io/dpa."
+  },
+  "capabilities": {
+    "tools_count": 66,
+    "categories": [
+      "Assistants (CRUD, voices, languages, models, providers, webhooks)",
+      "Calls (make, list, get, delete)",
+      "Campaigns (create, list, start/stop, delete)",
+      "Leads (create, list, update, delete, secondary contacts)",
+      "Knowledge bases (CRUD + documents)",
+      "Phone numbers (search, purchase, release, list)",
+      "SIP trunks (CRUD)",
+      "Conversations (list, get, send, AI handover)",
+      "WhatsApp (senders, templates, send template/freeform, session status)",
+      "SMS (send)",
+      "Mid-call tools (register custom HTTP integrations)",
+      "AI Replies (context-aware reply generation)",
+      "User profile and balance"
+    ]
+  },
+  "example_prompts": [
+    "List all my Famulor assistants and their current status.",
+    "Create a German sales assistant using GPT-4.1-mini and the Susi voice with a friendly opening line.",
+    "Make a test call to +491234567890 with my onboarding assistant.",
+    "Add these 25 leads to campaign 42 and start it.",
+    "Search for US phone numbers in the 415 area code and purchase the cheapest one.",
+    "Build a knowledge base from https://docs.example.com and attach it to my support assistant.",
+    "Send a WhatsApp template confirmation_v2 to +491701234567.",
+    "Show me all calls today where the goal_completed variable was false."
+  ],
+  "test_account": {
+    "available_on_request": true,
+    "contact": "support@famulor.io",
+    "notes": "We can provide a sandbox API key to the OpenAI review team on request."
+  },
+  "repository_url": "https://github.com/bekservice/Famulor-MCP",
+  "version": "0.2.0"
+}

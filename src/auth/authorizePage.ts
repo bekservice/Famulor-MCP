@@ -26,7 +26,7 @@ export function renderAuthorizePage(params: {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+  <link rel="icon" href="/logo.png" type="image/png" />
   <title>Connect Famulor to your MCP client</title>
   <style>
     :root {
@@ -151,7 +151,7 @@ export function renderAuthorizePage(params: {
 <body>
   <form class="card" method="POST" action="/authorize">
     <div class="brand">
-      <img class="brand-mark" src="/logo.svg" alt="Famulor" width="36" height="36" />
+      <img class="brand-mark" src="/logo.png" alt="Famulor" width="36" height="36" />
       <div class="brand-name">Famulor MCP</div>
     </div>
 
