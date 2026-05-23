@@ -77,8 +77,16 @@ export interface AccessTokenPayload {
   exp: number;
 }
 
+export interface RefreshTokenPayload {
+  kind: 'refresh';
+  api_key: string;
+  client_id: string;
+  exp: number;
+}
+
 const CODE_TTL_SECONDS = 5 * 60;
-const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
+const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;          // 30 days
+const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 365;       // 1 year
 
 export function issueAuthCode(args: {
   apiKey: string;
@@ -149,6 +157,32 @@ export function issueAccessToken(apiKey: string, clientId: string): { token: str
     exp: Math.floor(Date.now() / 1000) + expiresIn,
   };
   return { token: encryptPayload(payload), expiresIn };
+}
+
+export function issueRefreshToken(apiKey: string, clientId: string): string {
+  const payload: RefreshTokenPayload = {
+    kind: 'refresh',
+    api_key: apiKey,
+    client_id: clientId,
+    exp: Math.floor(Date.now() / 1000) + REFRESH_TTL_SECONDS,
+  };
+  return encryptPayload(payload);
+}
+
+export function verifyRefreshToken(token: string): RefreshTokenPayload {
+  let payload: RefreshTokenPayload;
+  try {
+    payload = decryptPayload<RefreshTokenPayload>(token);
+  } catch {
+    throw new OAuthError('invalid_grant', 'Refresh token is invalid or malformed');
+  }
+  if (payload.kind !== 'refresh') {
+    throw new OAuthError('invalid_grant', 'Provided token is not a refresh token');
+  }
+  if (payload.exp < Math.floor(Date.now() / 1000)) {
+    throw new OAuthError('invalid_grant', 'Refresh token has expired');
+  }
+  return payload;
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {

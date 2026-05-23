@@ -27,8 +27,10 @@ import {
   generateClientId,
   issueAuthCode,
   issueAccessToken,
+  issueRefreshToken,
   consumeAuthCode,
   verifyAccessToken,
+  verifyRefreshToken,
   OAuthError,
 } from '../src/auth/oauth.js';
 import { renderAuthorizePage } from '../src/auth/authorizePage.js';
@@ -159,9 +161,12 @@ app.get('/.well-known/oauth-authorization-server', (req, res) => {
     token_endpoint: `${issuer}/token`,
     registration_endpoint: `${issuer}/register`,
     response_types_supported: ['code'],
-    grant_types_supported: ['authorization_code'],
-    code_challenge_methods_supported: ['S256', 'plain'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
+    code_challenge_methods_supported: ['S256'],
     token_endpoint_auth_methods_supported: ['none', 'client_secret_post', 'client_secret_basic'],
+    // ChatGPT Apps SDK uses this hint to choose between Client ID Metadata
+    // Documents (CIMD) and Dynamic Client Registration. We use DCR, not CIMD.
+    client_id_metadata_document_supported: false,
     scopes_supported: ['mcp'],
     service_documentation: 'https://docs.famulor.io',
     op_policy_uri: 'https://famulor.de/privacy',
@@ -199,15 +204,33 @@ app.post('/register', (req, res) => {
   const issuer = resolveIssuer(req);
   const clientId = generateClientId();
   const clientSecret = `famulor_sec_${randomBytes(24).toString('hex')}`;
+
+  // Echo the requested grant_types if the client asked for any we support.
+  // ChatGPT registers with ["authorization_code","refresh_token"] and aborts
+  // setup if the server forces ["authorization_code"] only.
+  const SUPPORTED_GRANTS = new Set(['authorization_code', 'refresh_token']);
+  const requestedGrants = Array.isArray(body.grant_types) ? (body.grant_types as unknown[]) : [];
+  const grants = requestedGrants
+    .filter((g): g is string => typeof g === 'string')
+    .filter((g) => SUPPORTED_GRANTS.has(g));
+  const finalGrants = grants.length > 0 ? grants : ['authorization_code', 'refresh_token'];
+
+  const requestedAuthMethod =
+    typeof body.token_endpoint_auth_method === 'string'
+      ? body.token_endpoint_auth_method
+      : 'none';
+
   res.status(201).json({
     client_id: clientId,
     client_secret: clientSecret,
     client_id_issued_at: Math.floor(Date.now() / 1000),
+    client_secret_expires_at: 0, // never expires
     client_name: body.client_name ?? 'Famulor MCP client',
     redirect_uris: body.redirect_uris ?? [],
-    grant_types: ['authorization_code'],
+    grant_types: finalGrants,
     response_types: ['code'],
-    token_endpoint_auth_method: 'none',
+    token_endpoint_auth_method: requestedAuthMethod,
+    scope: typeof body.scope === 'string' ? body.scope : 'mcp',
     logo_uri: `${issuer}/logo.png`,
   });
 });
@@ -350,28 +373,56 @@ app.post('/authorize', async (req, res) => {
 app.post('/token', (req, res) => {
   const body = (req.body || {}) as Record<string, string | undefined>;
   try {
-    if (body.grant_type !== 'authorization_code') {
-      throw new OAuthError('unsupported_grant_type', 'Only authorization_code is supported');
+    if (body.grant_type === 'authorization_code') {
+      if (!body.code || !body.code_verifier || !body.redirect_uri || !body.client_id) {
+        throw new OAuthError(
+          'invalid_request',
+          'code, code_verifier, redirect_uri and client_id are required'
+        );
+      }
+      const codePayload = consumeAuthCode({
+        code: body.code,
+        codeVerifier: body.code_verifier,
+        clientId: body.client_id,
+        redirectUri: body.redirect_uri,
+      });
+      const { token, expiresIn } = issueAccessToken(codePayload.api_key, codePayload.client_id);
+      const refresh = issueRefreshToken(codePayload.api_key, codePayload.client_id);
+      res.json({
+        access_token: token,
+        token_type: 'Bearer',
+        expires_in: expiresIn,
+        refresh_token: refresh,
+        scope: 'mcp',
+      });
+      return;
     }
-    if (!body.code || !body.code_verifier || !body.redirect_uri || !body.client_id) {
-      throw new OAuthError(
-        'invalid_request',
-        'code, code_verifier, redirect_uri and client_id are required'
-      );
+
+    if (body.grant_type === 'refresh_token') {
+      if (!body.refresh_token) {
+        throw new OAuthError('invalid_request', 'refresh_token is required');
+      }
+      const refreshPayload = verifyRefreshToken(body.refresh_token);
+      if (body.client_id && body.client_id !== refreshPayload.client_id) {
+        throw new OAuthError('invalid_grant', 'client_id does not match the refresh token');
+      }
+      const { token, expiresIn } = issueAccessToken(refreshPayload.api_key, refreshPayload.client_id);
+      // Rotate the refresh token on each use (security best practice).
+      const rotated = issueRefreshToken(refreshPayload.api_key, refreshPayload.client_id);
+      res.json({
+        access_token: token,
+        token_type: 'Bearer',
+        expires_in: expiresIn,
+        refresh_token: rotated,
+        scope: 'mcp',
+      });
+      return;
     }
-    const codePayload = consumeAuthCode({
-      code: body.code,
-      codeVerifier: body.code_verifier,
-      clientId: body.client_id,
-      redirectUri: body.redirect_uri,
-    });
-    const { token, expiresIn } = issueAccessToken(codePayload.api_key, codePayload.client_id);
-    res.json({
-      access_token: token,
-      token_type: 'Bearer',
-      expires_in: expiresIn,
-      scope: 'mcp',
-    });
+
+    throw new OAuthError(
+      'unsupported_grant_type',
+      `grant_type must be authorization_code or refresh_token, got ${body.grant_type ?? '<missing>'}`
+    );
   } catch (err) {
     if (err instanceof OAuthError) {
       res.status(err.status === 401 ? 401 : 400).json({
