@@ -267,7 +267,14 @@ app.post('/authorize', async (req, res) => {
 
   // Quick API-key sanity check against Famulor — fail fast if the key is bad.
   // Famulor returns 302 → login page for bad keys, so disable redirect-follow
-  // and require a 200 with JSON. Skip in dev when SKIP_FAMULOR_VERIFY=1.
+  // and require a 200 with JSON.
+  //
+  // 429 (rate limit) and 5xx (Famulor outage) are NOT signals that the key is
+  // bad — we let those pass through with a benign warning. The token still
+  // gets minted; the first real tool call will surface any genuine auth error.
+  //
+  // Skip the whole probe in dev with SKIP_FAMULOR_VERIFY=1.
+  let verifyWarning: string | null = null;
   if (process.env.SKIP_FAMULOR_VERIFY !== '1') try {
     const probe = await fetch('https://app.famulor.de/api/user/me', {
       headers: {
@@ -276,28 +283,52 @@ app.post('/authorize', async (req, res) => {
       },
       redirect: 'manual',
     });
-    if (probe.status !== 200) {
-      throw new Error(`Famulor rejected the key (HTTP ${probe.status}).`);
-    }
-    const ct = probe.headers.get('content-type') ?? '';
-    if (!ct.toLowerCase().includes('application/json')) {
-      throw new Error('Famulor did not accept this API key.');
+    if (probe.status === 200) {
+      const ct = probe.headers.get('content-type') ?? '';
+      if (!ct.toLowerCase().includes('application/json')) {
+        throw new Error('Famulor did not return JSON for the key check.');
+      }
+      // happy path
+    } else if (probe.status === 401 || probe.status === 403) {
+      throw new Error(
+        'The API key was rejected by Famulor. Double-check it on https://app.famulor.de/api-keys.'
+      );
+    } else if (probe.status === 429) {
+      // Don't block on rate limit — issue the token anyway.
+      verifyWarning = 'rate-limited';
+    } else if (probe.status >= 500) {
+      verifyWarning = `famulor-status-${probe.status}`;
+    } else {
+      throw new Error(`Famulor responded with HTTP ${probe.status} during key check.`);
     }
   } catch (err) {
+    // Only treat as a hard error if it's not a transient/network glitch.
     const msg = err instanceof Error ? err.message : String(err);
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.status(401).send(
-      renderAuthorizePage({
-        clientId: client_id,
-        redirectUri: redirect_uri,
-        state: state ?? '',
-        codeChallenge: code_challenge,
-        codeChallengeMethod: code_challenge_method ?? 'S256',
-        scope: scope ?? 'mcp',
-        error: `Could not verify API key: ${msg}`,
-      })
-    );
-    return;
+    const isTransient =
+      msg.includes('fetch failed') || msg.includes('ENOTFOUND') || msg.includes('ETIMEDOUT');
+    if (isTransient) {
+      verifyWarning = 'famulor-unreachable';
+    } else {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.status(401).send(
+        renderAuthorizePage({
+          clientId: client_id,
+          redirectUri: redirect_uri,
+          state: state ?? '',
+          codeChallenge: code_challenge,
+          codeChallengeMethod: code_challenge_method ?? 'S256',
+          scope: scope ?? 'mcp',
+          error: `Could not verify API key: ${msg}`,
+        })
+      );
+      return;
+    }
+  }
+
+  if (verifyWarning) {
+    // Log only — don't block the user. The first real tool call validates
+    // the key for real against Famulor.
+    console.warn(`[authorize] proceeding despite verify warning: ${verifyWarning}`);
   }
 
   const code = issueAuthCode({
