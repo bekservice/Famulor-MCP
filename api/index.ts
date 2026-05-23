@@ -376,19 +376,43 @@ function extractBearer(req: Request): string | null {
   return m ? m[1].trim() : null;
 }
 
-async function handleMcp(req: Request, res: Response) {
-  const bearer = extractBearer(req);
-  if (!bearer) {
-    return unauthorized(req, res, 'Bearer token required');
-  }
+// JSON-RPC methods that any unauthenticated MCP client may call. ChatGPT
+// (and other clients) call these during connector discovery BEFORE the user
+// has been through the OAuth flow, so blocking them here aborts the tool
+// scan with "MCP SSE probe returned application/json" etc. Only tool
+// execution requires a real Famulor token.
+const PUBLIC_METHODS = new Set<string>([
+  'initialize',
+  'ping',
+  'notifications/initialized',
+  'notifications/cancelled',
+  'tools/list',
+  'prompts/list',
+  'resources/list',
+  'resources/templates/list',
+  'logging/setLevel',
+]);
 
-  let apiKey: string;
-  try {
-    const payload = verifyAccessToken(bearer);
-    apiKey = payload.api_key;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Invalid token';
-    return unauthorized(req, res, msg);
+async function handleMcp(req: Request, res: Response) {
+  const body = req.body as { method?: string } | undefined;
+  const method = typeof body?.method === 'string' ? body.method : undefined;
+  const isPublic = method === undefined || PUBLIC_METHODS.has(method);
+
+  // Try to decode the Bearer token if there is one. For probe methods we
+  // accept missing or invalid tokens silently; for tool execution we hard-fail.
+  const bearer = extractBearer(req);
+  let apiKey: string | null = null;
+  if (bearer) {
+    try {
+      apiKey = verifyAccessToken(bearer).api_key;
+    } catch (err) {
+      if (!isPublic) {
+        const msg = err instanceof Error ? err.message : 'Invalid token';
+        return unauthorized(req, res, msg);
+      }
+    }
+  } else if (!isPublic) {
+    return unauthorized(req, res, 'Bearer token required');
   }
 
   const mcpServer = new Server(
@@ -398,13 +422,15 @@ async function handleMcp(req: Request, res: Response) {
       instructions: FAMULOR_INSTRUCTIONS,
     }
   );
-  (mcpServer as any).userConfig = { famulor_api_key: apiKey };
+  (mcpServer as any).userConfig = apiKey ? { famulor_api_key: apiKey } : {};
 
   await setupFamulorServer(mcpServer);
 
+  // No enableJsonResponse — let the SDK return text/event-stream (SSE), which
+  // is what ChatGPT's MCP SSE probe expects. enableJsonResponse=true forced
+  // application/json on every response and caused ChatGPT to abort the scan.
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
-    enableJsonResponse: true,
   });
 
   res.on('close', () => {
