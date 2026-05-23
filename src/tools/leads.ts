@@ -1,10 +1,9 @@
 /**
- * Lead Tools
- *
- * Tools for managing leads in Famulor
+ * Lead Tools — list, create, update, delete.
  */
 
 import { FamulorClient } from '../auth/famulor.js';
+import { textResult, errorResult, pickDefined, buildQuery } from './_util.js';
 
 export async function handleLeadTools(
   name: string,
@@ -14,55 +13,31 @@ export async function handleLeadTools(
   try {
     switch (name) {
       case 'list_leads': {
-        const { page, per_page } = args as {
-          page?: number;
-          per_page?: number;
-        };
-
-        const params: string[] = [];
-        if (page !== undefined) {
-          params.push(`page=${page}`);
-        }
-        if (per_page !== undefined) {
-          params.push(`per_page=${per_page}`);
-        }
-
-        const endpoint = `/api/user/leads${params.length > 0 ? `?${params.join('&')}` : ''}`;
-        const result = await client.get(endpoint);
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+        const { page, per_page } = args as { page?: number; per_page?: number };
+        const result = await client.get(
+          `/api/user/leads${buildQuery({ page, per_page })}`
+        );
+        return textResult(result);
       }
 
       case 'create_lead': {
-        const { phone_number, campaign_id, variables, allow_dupplicate } = args as {
-          phone_number: string;
-          campaign_id: number;
-          variables?: Array<Record<string, unknown>>;
-          allow_dupplicate?: boolean;
-        };
-
-        const result = await client.post('/api/user/lead', {
+        const { phone_number, campaign_id, variables, allow_dupplicate, secondary_contacts } =
+          args as {
+            phone_number: string;
+            campaign_id: number;
+            variables?: Record<string, unknown> | Array<Record<string, unknown>>;
+            allow_dupplicate?: boolean;
+            secondary_contacts?: Array<{ phone_number: string; variables?: Record<string, unknown> }>;
+          };
+        const body = pickDefined({
           phone_number,
           campaign_id,
-          variables: variables || [],
-          allow_dupplicate: allow_dupplicate ?? false,
+          variables,
+          allow_dupplicate,
+          secondary_contacts,
         });
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+        const result = await client.post('/api/user/lead', body);
+        return textResult(result);
       }
 
       case 'update_lead': {
@@ -73,45 +48,24 @@ export async function handleLeadTools(
           status?: 'created' | 'completed' | 'reached-max-retries';
           variables?: Record<string, unknown>;
         };
+        const body = pickDefined({ campaign_id, phone_number, status, variables });
+        const result = await client.request(`/api/leads/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        });
+        return textResult(result);
+      }
 
-        const body: Record<string, unknown> = {};
-        if (campaign_id !== undefined) body.campaign_id = campaign_id;
-        if (phone_number !== undefined) body.phone_number = phone_number;
-        if (status !== undefined) body.status = status;
-        if (variables !== undefined) body.variables = variables;
-
-        const result = await client.request<{ message: string }>(
-          `/api/leads/${id}`,
-          {
-            method: 'PUT',
-            body: JSON.stringify(body),
-          }
-        );
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+      case 'delete_lead': {
+        const { id } = args as { id: number };
+        const result = await client.delete(`/api/user/leads/${id}`);
+        return textResult(result);
       }
 
       default:
         throw new Error(`Unknown lead tool: ${name}`);
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Error: ${errorMessage}`,
-        },
-      ],
-      isError: true,
-    };
+    return errorResult(error);
   }
 }
-

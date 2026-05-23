@@ -1,109 +1,107 @@
-# 🚀 Deployment Guide for Famulor MCP Server
+# Deployment Guide for Famulor MCP Server
 
-This guide explains how to deploy the Famulor MCP Server for use with any MCP-compatible client (ChatGPT Desktop, Claude Desktop, etc.).
+The Famulor MCP server supports two transports:
 
-## Overview
+1. **Streamable HTTP + OAuth 2.0** (recommended) — hosted on Vercel at
+   `https://mcp.famulor.io/mcp`. Users connect their MCP client (Claude Code,
+   Claude Desktop, Cursor, etc.) and authorize via a browser flow where they
+   paste their Famulor API key. The key is encrypted into the access token.
+2. **stdio** (local) — for users who want to run the server locally with their
+   API key supplied via env var.
 
-The Famulor MCP Server is designed to run locally with MCP-compatible clients via stdio transport. It connects directly to your MCP client and does not require HTTP deployment.
+---
 
-## Local Deployment (Recommended)
+## Option 1 — Hosted HTTP server on Vercel
 
-The MCP Server is intended to run locally on your machine and connect to your MCP client through stdio.
+### One-time deploy
 
-### Prerequisites
+1. Set the production env vars in Vercel:
 
-- Node.js >= 20.0.0
-- An MCP-compatible client installed (ChatGPT Desktop, Claude Desktop, etc.)
-- Famulor API key
+   | Variable      | Value                                              |
+   | ------------- | -------------------------------------------------- |
+   | `MCP_SECRET`  | A long random string (`openssl rand -hex 32`).     |
+   | `MCP_ISSUER`  | Your public URL, e.g. `https://mcp.famulor.io`.    |
 
-### Setup Steps
+   `MCP_SECRET` is what encrypts the OAuth access tokens. Rotating it
+   invalidates all existing tokens — users will simply re-authorize.
 
-1. **Build the server:**
-   ```bash
-   npm run build
-   ```
+2. Push to the deployment branch. Vercel runs `npm run build` and serves
+   everything through `api/index.ts` (see `vercel.json`).
 
-2. **Configure MCP in your client:**
-   
-   Create or edit the MCP configuration file for your client:
-   
-   **For ChatGPT Desktop App:**
-   - macOS: `~/Library/Application Support/ChatGPT/mcp.json`
-   - Windows: `%APPDATA%\ChatGPT\mcp.json`
-   - Linux: `~/.config/ChatGPT/mcp.json`
-   
-   **For Claude Desktop App:**
-   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-   - Linux: `~/.config/Claude/claude_desktop_config.json`
+3. Point your custom domain (`mcp.famulor.io`) at the Vercel project.
 
-3. **Add configuration:**
-   ```json
-   {
-     "mcpServers": {
-       "famulor": {
-         "command": "node",
-         "args": ["/absolute/path/to/famulor-mcp/dist/index.js"],
-         "env": {
-           "FAMULOR_API_KEY": "your-api-key-here"
-         }
-       }
-     }
-   }
-   ```
+### Users connect like this
 
-4. **Restart your MCP client**
-
-   The MCP server will be automatically started by your MCP client when needed.
-
-## Development Mode
-
-For development with hot reload:
+In Claude Code:
 
 ```bash
-npm run dev
+claude mcp add --transport http famulor https://mcp.famulor.io/mcp
 ```
 
-Note: In development mode, you'll need to manually configure the path to `src/index.ts` or use `tsx` in the MCP config.
+The first tool call triggers the OAuth flow — Claude Code opens
+`https://mcp.famulor.io/authorize` in the browser, the user pastes their
+[Famulor API key](https://app.famulor.de/api-keys), and the resulting access
+token is stored by Claude Code for future sessions.
 
-## Testing
+Other MCP clients (Claude Desktop, Cursor, Windsurf, Zed, …) use the same flow
+because the server publishes RFC 8414 + RFC 9728 OAuth metadata at
+`/.well-known/oauth-authorization-server` and
+`/.well-known/oauth-protected-resource`.
 
-Test the server manually:
+### Verifying a deployment
 
 ```bash
+curl https://mcp.famulor.io/health
+curl https://mcp.famulor.io/.well-known/oauth-authorization-server | jq
+curl -i https://mcp.famulor.io/mcp -X POST                       # → 401 + WWW-Authenticate
+```
+
+### Local dev against the same Vercel-style handler
+
+```bash
+cp .env.example .env
+echo "MCP_SECRET=$(openssl rand -hex 32)" >> .env
+npm install
+npm run dev:http
+# server on http://localhost:8787
+```
+
+Then in another shell:
+
+```bash
+curl http://localhost:8787/.well-known/oauth-authorization-server
+```
+
+---
+
+## Option 2 — stdio (local) for power users
+
+```bash
+npm install
 npm run build
-node dist/index.js
 ```
 
-The server will output "Famulor MCP Server running on stdio" to stderr when ready.
+In Claude Desktop's `claude_desktop_config.json`:
 
-## Troubleshooting
+```json
+{
+  "mcpServers": {
+    "famulor": {
+      "command": "node",
+      "args": ["/absolute/path/to/famulor-mcp/dist/src/index.js"],
+      "env": { "FAMULOR_API_KEY": "fa_..." }
+    }
+  }
+}
+```
 
-### Server Not Starting
-- Check Node.js version: `node --version` (must be >= 20.0.0)
-- Verify build succeeded: `npm run build`
-- Check file permissions on `dist/index.js`
+stdio mode reads `FAMULOR_API_KEY` directly from the process env — no OAuth.
 
-### MCP Server Not Recognized
-- Verify the path in your MCP config file is absolute and correct
-- Check JSON syntax in your config file
-- Restart your MCP client completely
+---
 
-### API Key Issues
-- Ensure `FAMULOR_API_KEY` is set in `mcp.json` or as environment variable
-- Verify API key is valid at [Famulor API Keys](https://app.famulor.de/api-keys)
+## Security notes
 
-## Security Notes
-
-- ✅ API keys are stored locally in your MCP config file (encrypted by your MCP client)
-- ✅ Each user configures their own API key
-- ✅ No API keys are sent over the network (stdio is local)
-- ❌ Do not commit your MCP config file with API keys to version control
-
-## Resources
-
-- [MCP Protocol Documentation](https://modelcontextprotocol.io/)
-- [ChatGPT Desktop App](https://chatgpt.com/download)
-- [Claude Desktop App](https://claude.ai/download)
-- [Famulor Voice Agent Platform](https://app.famulor.de)
-- [Famulor API Documentation](https://docs.famulor.io/api-reference/)
+- The access token is an AES-256-GCM encrypted blob of `{ kind, api_key, client_id, exp }`. The Famulor API key never lands in any DB.
+- PKCE (S256) is enforced on the authorization code exchange.
+- The `/authorize` POST does a live `GET /api/user/me` probe against Famulor before issuing the code, so bad keys are rejected immediately.
+- CORS is open (`*`) on the OAuth and MCP endpoints — this is required for browser-based MCP clients to call them.

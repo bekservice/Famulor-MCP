@@ -1,10 +1,9 @@
 /**
- * Campaign Tools
- *
- * Tools for managing campaigns in Famulor
+ * Campaign Tools — list, create, update status, delete.
  */
 
 import { FamulorClient } from '../auth/famulor.js';
+import { textResult, errorResult, pickDefined } from './_util.js';
 
 export async function handleCampaignTools(
   name: string,
@@ -15,15 +14,13 @@ export async function handleCampaignTools(
     switch (name) {
       case 'list_campaigns': {
         const result = await client.get('/api/user/campaigns');
+        return textResult(result);
+      }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+      case 'create_campaign': {
+        const body = pickDefined(args as Record<string, unknown>);
+        const result = await client.post('/api/user/campaigns', body);
+        return textResult(result);
       }
 
       case 'update_campaign_status': {
@@ -31,36 +28,23 @@ export async function handleCampaignTools(
           campaign_id: number;
           action: 'start' | 'stop';
         };
-
         const result = await client.post('/api/user/campaigns/update-status', {
           campaign_id,
           action,
         });
+        return textResult(result);
+      }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+      case 'delete_campaign': {
+        const { id } = args as { id: number };
+        const result = await client.delete(`/api/user/campaign/${id}`);
+        return textResult(result);
       }
 
       default:
         throw new Error(`Unknown campaign tool: ${name}`);
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Error: ${errorMessage}`,
-        },
-      ],
-      isError: true,
-    };
+    return errorResult(error);
   }
 }
-

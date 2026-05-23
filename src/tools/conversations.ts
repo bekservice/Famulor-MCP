@@ -1,10 +1,9 @@
 /**
- * Conversation Tools
- *
- * Tools for retrieving conversation history from Famulor
+ * Conversation Tools — chat history, send messages, list, enable/disable AI.
  */
 
 import { FamulorClient } from '../auth/famulor.js';
+import { textResult, errorResult, pickDefined, buildQuery } from './_util.js';
 
 export async function handleConversationTools(
   name: string,
@@ -13,18 +12,42 @@ export async function handleConversationTools(
 ) {
   try {
     switch (name) {
+      case 'list_conversations': {
+        const {
+          type,
+          assistant_id,
+          customer_phone,
+          whatsapp_sender_phone,
+          external_identifier,
+          per_page,
+          cursor,
+        } = args as {
+          type?: string;
+          assistant_id?: number;
+          customer_phone?: string;
+          whatsapp_sender_phone?: string;
+          external_identifier?: string;
+          per_page?: number;
+          cursor?: string;
+        };
+        const result = await client.get(
+          `/api/user/conversations${buildQuery({
+            type,
+            assistant_id,
+            customer_phone,
+            whatsapp_sender_phone,
+            external_identifier,
+            per_page,
+            cursor,
+          })}`
+        );
+        return textResult(result);
+      }
+
       case 'get_conversation': {
         const { uuid } = args as { uuid: string };
         const result = await client.get(`/api/conversations/${uuid}`);
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+        return textResult(result);
       }
 
       case 'create_conversation': {
@@ -33,62 +56,39 @@ export async function handleConversationTools(
           type?: 'widget' | 'test';
           variables?: Record<string, unknown>;
         };
-
-        const body: Record<string, unknown> = {
-          assistant_id,
-        };
-        if (type !== undefined) body.type = type;
-        if (variables !== undefined) body.variables = variables;
-
+        const body = pickDefined({ assistant_id, type, variables });
         const result = await client.post('/api/conversations', body);
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+        return textResult(result);
       }
 
       case 'send_message': {
-        const { uuid, message } = args as {
-          uuid: string;
-          message: string;
-        };
+        const { uuid, message } = args as { uuid: string; message: string };
+        const result = await client.post(`/api/conversations/${uuid}/messages`, {
+          message,
+        });
+        return textResult(result);
+      }
 
+      case 'enable_conversation_ai': {
+        const { uuid } = args as { uuid: string };
         const result = await client.post(
-          `/api/conversations/${uuid}/messages`,
-          {
-            message,
-          }
+          `/api/automate/conversations/${uuid}/enable-ai`
         );
+        return textResult(result);
+      }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+      case 'disable_conversation_ai': {
+        const { uuid } = args as { uuid: string };
+        const result = await client.post(
+          `/api/automate/conversations/${uuid}/disable-ai`
+        );
+        return textResult(result);
       }
 
       default:
         throw new Error(`Unknown conversation tool: ${name}`);
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Error: ${errorMessage}`,
-        },
-      ],
-      isError: true,
-    };
+    return errorResult(error);
   }
 }
-

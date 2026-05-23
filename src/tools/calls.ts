@@ -1,10 +1,9 @@
 /**
- * Call Tools
- *
- * Tools for making and managing phone calls via Famulor
+ * Call Tools — make calls, retrieve, list, delete.
  */
 
 import { FamulorClient } from '../auth/famulor.js';
+import { textResult, errorResult, buildQuery, pickDefined } from './_util.js';
 
 export async function handleCallTools(
   name: string,
@@ -19,35 +18,15 @@ export async function handleCallTools(
           phone_number: string;
           variables?: Record<string, unknown>;
         };
-
-          const result = await client.post('/api/user/make_call', {
-            assistant_id,
-            phone_number,
-            variables: variables || {},
-          });
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+        const body = pickDefined({ assistant_id, phone_number, variables });
+        const result = await client.post('/api/user/make_call', body);
+        return textResult(result);
       }
 
-        case 'get_call': {
-          const { call_id } = args as { call_id: string };
-          const result = await client.get(`/api/user/calls/${call_id}`);
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+      case 'get_call': {
+        const { call_id } = args as { call_id: string };
+        const result = await client.get(`/api/user/calls/${call_id}`);
+        return textResult(result);
       }
 
       case 'list_calls': {
@@ -56,45 +35,22 @@ export async function handleCallTools(
           page?: number;
           per_page?: number;
         };
+        const result = await client.get(
+          `/api/user/calls${buildQuery({ assistant_id, page, per_page })}`
+        );
+        return textResult(result);
+      }
 
-        const params: string[] = [];
-        if (page !== undefined) {
-          params.push(`page=${page}`);
-        }
-        if (per_page !== undefined) {
-          params.push(`per_page=${per_page}`);
-        }
-        if (assistant_id) {
-          params.push(`assistant_id=${assistant_id}`);
-        }
-
-        const endpoint = `/api/user/calls${params.length > 0 ? `?${params.join('&')}` : ''}`;
-        const result = await client.get(endpoint);
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+      case 'delete_call': {
+        const { call_id } = args as { call_id: string };
+        const result = await client.delete(`/api/user/calls/${call_id}`);
+        return textResult(result);
       }
 
       default:
         throw new Error(`Unknown call tool: ${name}`);
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Error: ${errorMessage}`,
-        },
-      ],
-      isError: true,
-    };
+    return errorResult(error);
   }
 }
-

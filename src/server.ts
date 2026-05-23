@@ -1,695 +1,768 @@
 /**
- * MCP Server Setup for Famulor Tools
+ * MCP Server setup for the Famulor toolkit.
+ *
+ * The API key for the current request is supplied by the transport layer
+ * (Streamable HTTP / OAuth bearer token, see api/index.ts) and lives on
+ * `server.userConfig.famulor_api_key`.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { registerAllTools } from './tools/index.js';
 
-/**
- * Setup the Famulor MCP server with all tools and handlers
- *
- * NOTE: Each user must configure their own Famulor API key.
- * The API key is provided by the user via the MCP Config API,
- * which allows users to enter their API key through the ChatGPT/Claude UI.
- *
- * This ensures:
- * - Each user uses their own Famulor API key
- * - API keys are securely stored per-user
- * - The app can be deployed online for the OpenAI App Store
- */
+const Schema = (
+  properties: Record<string, unknown>,
+  required: string[] = []
+) => ({
+  type: 'object',
+  properties,
+  ...(required.length ? { required } : {}),
+});
+
+type ToolDef = {
+  name: string;
+  description: string;
+  inputSchema: ReturnType<typeof Schema>;
+};
+
+const ASSISTANT_CONFIG_PROPERTIES: Record<string, unknown> = {
+  name: { type: 'string', description: 'Display name of the assistant (max 255 chars)' },
+  voice_id: { type: 'integer', description: 'Voice ID from get_voices' },
+  language_id: { type: 'integer', description: 'Primary language ID from get_languages' },
+  secondary_language_ids: {
+    type: 'array',
+    items: { type: 'integer' },
+    description: 'Additional language IDs the assistant can speak',
+  },
+  type: { type: 'string', enum: ['inbound', 'outbound'], description: 'Assistant call direction' },
+  mode: { type: 'string', enum: ['pipeline', 'multimodal', 'dualplex'] },
+  timezone: { type: 'string', description: 'IANA timezone, e.g. "Europe/Berlin"' },
+  initial_message: { type: 'string', description: 'First message spoken at call start (max 200 chars)' },
+  system_prompt: { type: 'string', description: 'System prompt defining behavior' },
+  llm_model_id: { type: 'integer', description: 'Required for mode=pipeline' },
+  multimodal_model_id: { type: 'integer', description: 'Required for mode=multimodal/dualplex' },
+  chat_llm_fallback_id: { type: 'integer' },
+  turn_detection_threshold: { type: 'number' },
+  knowledgebase_id: { type: 'integer' },
+  knowledgebase_mode: { type: 'string', enum: ['function_call', 'prompt'] },
+  phone_number_id: { type: ['integer', 'null'] },
+  tool_ids: { type: 'array', items: { type: 'integer' } },
+  tools: { type: 'array', items: { type: 'object', additionalProperties: true } },
+  tts_emotion_enabled: { type: 'boolean' },
+  voice_stability: { type: 'number' },
+  voice_similarity: { type: 'number' },
+  speech_speed: { type: 'number' },
+  llm_temperature: { type: 'number' },
+  synthesizer_provider_id: { type: 'integer' },
+  transcriber_provider_id: { type: 'integer' },
+  allow_interruptions: { type: 'boolean' },
+  fillers: { type: 'boolean' },
+  filler_config: { type: 'object', additionalProperties: true },
+  record: { type: 'boolean' },
+  enable_noise_cancellation: { type: 'boolean' },
+  wait_for_customer: { type: 'boolean' },
+  max_duration: { type: 'integer' },
+  max_silence_duration: { type: 'integer' },
+  max_initial_silence_duration: { type: 'integer' },
+  ringing_time: { type: 'integer' },
+  reengagement_interval: { type: 'integer' },
+  reengagement_prompt: { type: 'string' },
+  end_call_on_voicemail: { type: 'boolean' },
+  voice_mail_message: { type: 'string' },
+  endpoint_type: { type: 'string', enum: ['vad', 'ai'] },
+  endpoint_sensitivity: { type: 'number' },
+  interrupt_sensitivity: { type: 'number' },
+  min_interrupt_words: { type: 'integer' },
+  ambient_sound: { type: 'string' },
+  ambient_sound_volume: { type: 'number' },
+  is_webhook_active: { type: 'boolean' },
+  webhook_url: { type: ['string', 'null'] },
+  send_webhook_only_on_completed: { type: 'boolean' },
+  include_recording_in_webhook: { type: 'boolean' },
+  post_call_evaluation: { type: 'boolean' },
+  post_call_schema: {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        type: { type: 'string', enum: ['string', 'number', 'bool'] },
+        description: { type: 'string' },
+      },
+      required: ['name', 'type', 'description'],
+    },
+  },
+  variables: { type: 'object', additionalProperties: true },
+  conversation_inactivity_timeout: { type: 'integer' },
+  conversation_ended_retrigger: { type: 'boolean' },
+  conversation_ended_webhook_url: { type: 'string' },
+};
+
+const TOOLS: ToolDef[] = [
+  // -- User
+  {
+    name: 'get_me',
+    description: 'Get the authenticated Famulor user profile, including total balance.',
+    inputSchema: Schema({}),
+  },
+
+  // -- Assistants: read
+  {
+    name: 'get_assistants',
+    description:
+      'List all AI assistants on the Famulor account (paginated). Returns the assistant configurations including their fixed variable names.',
+    inputSchema: Schema({
+      page: { type: 'integer' },
+      per_page: { type: 'integer' },
+    }),
+  },
+  {
+    name: 'get_outbound_assistants',
+    description: 'List all outbound-capable assistants.',
+    inputSchema: Schema({}),
+  },
+  {
+    name: 'get_phone_numbers',
+    description: 'List phone numbers eligible to be attached to an assistant (filter by inbound/outbound).',
+    inputSchema: Schema({
+      type: { type: 'string', enum: ['inbound', 'outbound'] },
+    }),
+  },
+  {
+    name: 'get_models',
+    description: 'List available LLM / multimodal / dualplex model IDs.',
+    inputSchema: Schema({
+      type: { type: 'string', enum: ['llm', 'multimodal', 'dualplex'] },
+    }),
+  },
+  {
+    name: 'get_voices',
+    description: 'List voices compatible with a given engine mode and optional language.',
+    inputSchema: Schema({
+      mode: { type: 'string', enum: ['pipeline', 'multimodal', 'dualplex'] },
+      language_id: { type: 'integer' },
+    }),
+  },
+  {
+    name: 'get_languages',
+    description: 'List all supported assistant languages.',
+    inputSchema: Schema({}),
+  },
+  {
+    name: 'get_synthesizer_providers',
+    description: 'List custom TTS providers selectable on an assistant.',
+    inputSchema: Schema({}),
+  },
+  {
+    name: 'get_transcriber_providers',
+    description: 'List custom STT providers selectable on a pipeline assistant.',
+    inputSchema: Schema({}),
+  },
+
+  // -- Assistants: write
+  {
+    name: 'create_assistant',
+    description:
+      'Create a new AI assistant. Required: name, voice_id, language_id, type, mode, timezone, initial_message, system_prompt, and either llm_model_id (pipeline) or multimodal_model_id (multimodal/dualplex). For multimodal/dualplex, knowledgebase_mode must be "function_call" when a knowledgebase is attached.',
+    inputSchema: Schema(ASSISTANT_CONFIG_PROPERTIES, [
+      'name',
+      'voice_id',
+      'language_id',
+      'type',
+      'mode',
+      'timezone',
+      'initial_message',
+      'system_prompt',
+    ]),
+  },
+  {
+    name: 'update_assistant',
+    description: 'Update an existing assistant (partial). Only the fields you send are changed.',
+    inputSchema: Schema(
+      { id: { type: 'integer', description: 'Assistant ID to update' }, ...ASSISTANT_CONFIG_PROPERTIES },
+      ['id']
+    ),
+  },
+  {
+    name: 'delete_assistant',
+    description: 'Permanently delete an assistant. Cannot be undone.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+
+  // -- Assistants: webhooks
+  {
+    name: 'enable_assistant_inbound_webhook',
+    description: 'Enable inbound-call webhook notifications for an assistant.',
+    inputSchema: Schema(
+      {
+        assistant_id: { type: 'integer' },
+        webhook_url: { type: 'string', description: 'HTTPS URL that receives the webhook payload' },
+      },
+      ['assistant_id', 'webhook_url']
+    ),
+  },
+  {
+    name: 'disable_assistant_inbound_webhook',
+    description: 'Disable inbound-call webhook notifications.',
+    inputSchema: Schema({ assistant_id: { type: 'integer' } }, ['assistant_id']),
+  },
+  {
+    name: 'enable_assistant_conversation_ended_webhook',
+    description: 'Enable conversation-ended (chat) webhook for an assistant.',
+    inputSchema: Schema(
+      { assistant_id: { type: 'integer' }, webhook_url: { type: 'string' } },
+      ['assistant_id', 'webhook_url']
+    ),
+  },
+  {
+    name: 'disable_assistant_conversation_ended_webhook',
+    description: 'Disable conversation-ended (chat) webhook.',
+    inputSchema: Schema({ assistant_id: { type: 'integer' } }, ['assistant_id']),
+  },
+  {
+    name: 'disable_assistant_webhook',
+    description: 'Disable the post-call webhook for an assistant.',
+    inputSchema: Schema({ assistant_id: { type: 'integer' } }, ['assistant_id']),
+  },
+
+  // -- Calls
+  {
+    name: 'make_call',
+    description: 'Initiate an outbound AI phone call with a configured assistant.',
+    inputSchema: Schema(
+      {
+        assistant_id: { type: 'string', description: 'Assistant UUID or ID' },
+        phone_number: { type: 'string', description: 'E.164-formatted destination number' },
+        variables: { type: 'object', additionalProperties: true },
+      },
+      ['assistant_id', 'phone_number']
+    ),
+  },
+  {
+    name: 'get_call',
+    description: 'Retrieve a single call by ID.',
+    inputSchema: Schema({ call_id: { type: 'string' } }, ['call_id']),
+  },
+  {
+    name: 'list_calls',
+    description: 'List calls with pagination and optional assistant filter.',
+    inputSchema: Schema({
+      assistant_id: { type: 'string' },
+      page: { type: 'integer' },
+      per_page: { type: 'integer' },
+    }),
+  },
+  {
+    name: 'delete_call',
+    description: 'Delete a call record. Cannot be undone.',
+    inputSchema: Schema({ call_id: { type: 'string' } }, ['call_id']),
+  },
+
+  // -- Conversations
+  {
+    name: 'list_conversations',
+    description: 'List conversations across your assistants with cursor pagination and filters.',
+    inputSchema: Schema({
+      type: { type: 'string', enum: ['test', 'widget', 'whatsapp', 'api'] },
+      assistant_id: { type: 'integer' },
+      customer_phone: { type: 'string' },
+      whatsapp_sender_phone: { type: 'string' },
+      external_identifier: { type: 'string' },
+      per_page: { type: 'integer' },
+      cursor: { type: 'string' },
+    }),
+  },
+  {
+    name: 'get_conversation',
+    description: 'Get the full message history of a chat conversation by UUID.',
+    inputSchema: Schema({ uuid: { type: 'string' } }, ['uuid']),
+  },
+  {
+    name: 'create_conversation',
+    description: 'Start a new chat session with an assistant (widget=paid, test=free).',
+    inputSchema: Schema(
+      {
+        assistant_id: { type: 'string' },
+        type: { type: 'string', enum: ['widget', 'test'] },
+        variables: { type: 'object', additionalProperties: true },
+      },
+      ['assistant_id']
+    ),
+  },
+  {
+    name: 'send_message',
+    description: 'Send a user message in an existing chat conversation and get the assistant reply.',
+    inputSchema: Schema(
+      {
+        uuid: { type: 'string' },
+        message: { type: 'string', description: 'User message (max 2000 chars)' },
+      },
+      ['uuid', 'message']
+    ),
+  },
+  {
+    name: 'enable_conversation_ai',
+    description: 'Re-enable AI replies for a conversation after a human takeover.',
+    inputSchema: Schema({ uuid: { type: 'string' } }, ['uuid']),
+  },
+  {
+    name: 'disable_conversation_ai',
+    description: 'Disable AI replies for a conversation so a human can take over.',
+    inputSchema: Schema({ uuid: { type: 'string' } }, ['uuid']),
+  },
+
+  // -- Campaigns
+  {
+    name: 'list_campaigns',
+    description: 'List all outbound calling campaigns.',
+    inputSchema: Schema({}),
+  },
+  {
+    name: 'create_campaign',
+    description: 'Create a new outbound campaign tied to an outbound-capable assistant.',
+    inputSchema: Schema(
+      {
+        name: { type: 'string', description: 'Campaign name (max 255 chars)' },
+        assistant_id: { type: 'integer' },
+        timezone: { type: 'string' },
+        max_calls_in_parallel: { type: 'integer' },
+        allowed_hours_start_time: { type: 'string', description: 'H:i, e.g. "09:00"' },
+        allowed_hours_end_time: { type: 'string', description: 'H:i, e.g. "17:00"' },
+        allowed_days: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+          },
+        },
+        max_retries: { type: 'integer' },
+        retry_interval: { type: 'integer' },
+        retry_on_voicemail: { type: 'boolean' },
+        retry_on_goal_incomplete: { type: 'boolean' },
+        goal_completion_variable: { type: 'string' },
+        mark_complete_when_no_leads: { type: 'boolean' },
+      },
+      ['name', 'assistant_id']
+    ),
+  },
+  {
+    name: 'update_campaign_status',
+    description: 'Start or stop a campaign.',
+    inputSchema: Schema(
+      {
+        campaign_id: { type: 'integer' },
+        action: { type: 'string', enum: ['start', 'stop'] },
+      },
+      ['campaign_id', 'action']
+    ),
+  },
+  {
+    name: 'delete_campaign',
+    description: 'Delete a campaign. Cannot be undone.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+
+  // -- Leads
+  {
+    name: 'list_leads',
+    description: 'List leads with pagination.',
+    inputSchema: Schema({ page: { type: 'integer' }, per_page: { type: 'integer' } }),
+  },
+  {
+    name: 'create_lead',
+    description:
+      'Create a new lead in a campaign. IMPORTANT: variable names come from the associated assistant configuration and are fixed; only their values can be supplied here.',
+    inputSchema: Schema(
+      {
+        phone_number: { type: 'string', description: 'E.164 format, e.g. +491234567890' },
+        campaign_id: { type: 'integer' },
+        variables: {
+          description:
+            'Either an object (key/value pairs matching assistant variables) or an array of such objects.',
+          oneOf: [
+            { type: 'object', additionalProperties: true },
+            { type: 'array', items: { type: 'object', additionalProperties: true } },
+          ],
+        },
+        allow_dupplicate: { type: 'boolean' },
+        secondary_contacts: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              phone_number: { type: 'string' },
+              variables: { type: 'object', additionalProperties: true },
+            },
+            required: ['phone_number'],
+          },
+        },
+      },
+      ['phone_number', 'campaign_id']
+    ),
+  },
+  {
+    name: 'update_lead',
+    description: 'Update a lead. Variables are merged with existing ones.',
+    inputSchema: Schema(
+      {
+        id: { type: 'integer' },
+        campaign_id: { type: 'integer' },
+        phone_number: { type: 'string' },
+        status: { type: 'string', enum: ['created', 'completed', 'reached-max-retries'] },
+        variables: { type: 'object', additionalProperties: true },
+      },
+      ['id']
+    ),
+  },
+  {
+    name: 'delete_lead',
+    description: 'Delete a lead.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+
+  // -- SMS
+  {
+    name: 'send_sms',
+    description:
+      'Send an SMS from one of your Famulor phone numbers (must be SMS-capable). Costs are deducted from your balance.',
+    inputSchema: Schema(
+      {
+        from: { type: 'integer', description: 'Phone number ID' },
+        to: { type: 'string', description: 'Recipient in E.164 format' },
+        body: { type: 'string', description: 'Message body (max 300 chars)' },
+      },
+      ['from', 'to', 'body']
+    ),
+  },
+
+  // -- Mid-call tools
+  {
+    name: 'list_mid_call_tools',
+    description: 'List mid-call tools (HTTP integrations callable by an assistant during a call).',
+    inputSchema: Schema({}),
+  },
+  {
+    name: 'get_mid_call_tool',
+    description: 'Get a single mid-call tool by ID.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+  {
+    name: 'create_mid_call_tool',
+    description: 'Create a new mid-call HTTP tool.',
+    inputSchema: Schema(
+      {
+        name: {
+          type: 'string',
+          description: 'Tool identifier: lowercase letters and underscores, starts with a letter',
+        },
+        description: { type: 'string', description: 'When the AI should use it (max 255 chars)' },
+        endpoint: { type: 'string', description: 'HTTPS URL to call' },
+        method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] },
+        timeout: { type: 'integer', description: 'Seconds, 1-30' },
+        headers: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { name: { type: 'string' }, value: { type: 'string' } },
+            required: ['name', 'value'],
+          },
+        },
+        schema: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              type: { type: 'string', enum: ['string', 'number', 'boolean'] },
+              description: { type: 'string' },
+            },
+            required: ['name', 'type', 'description'],
+          },
+        },
+      },
+      ['name', 'description', 'endpoint', 'method']
+    ),
+  },
+  {
+    name: 'update_mid_call_tool',
+    description: 'Update a mid-call tool. headers/schema fully replace existing values when provided.',
+    inputSchema: Schema(
+      {
+        id: { type: 'integer' },
+        name: { type: 'string' },
+        description: { type: 'string' },
+        endpoint: { type: 'string' },
+        method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] },
+        timeout: { type: 'integer' },
+        headers: { type: 'array', items: { type: 'object', additionalProperties: true } },
+        schema: { type: 'array', items: { type: 'object', additionalProperties: true } },
+      },
+      ['id']
+    ),
+  },
+  {
+    name: 'delete_mid_call_tool',
+    description: 'Delete a mid-call tool.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+
+  // -- Knowledgebases
+  {
+    name: 'list_knowledgebases',
+    description: 'List all knowledge bases on the account.',
+    inputSchema: Schema({}),
+  },
+  {
+    name: 'get_knowledgebase',
+    description: 'Get a knowledge base by ID.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+  {
+    name: 'create_knowledgebase',
+    description: 'Create a new knowledge base.',
+    inputSchema: Schema(
+      {
+        name: { type: 'string', description: 'Max 255 chars' },
+        description: { type: 'string', description: 'Optional, max 255 chars' },
+      },
+      ['name']
+    ),
+  },
+  {
+    name: 'update_knowledgebase',
+    description: 'Rename or describe an existing knowledge base.',
+    inputSchema: Schema(
+      {
+        id: { type: 'integer' },
+        name: { type: 'string' },
+        description: { type: 'string' },
+      },
+      ['id']
+    ),
+  },
+  {
+    name: 'delete_knowledgebase',
+    description: 'Delete a knowledge base permanently.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+  {
+    name: 'list_documents',
+    description: 'List documents in a knowledge base.',
+    inputSchema: Schema({ knowledgebase_id: { type: 'integer' } }, ['knowledgebase_id']),
+  },
+  {
+    name: 'get_document',
+    description: 'Get a single document by ID.',
+    inputSchema: Schema(
+      { knowledgebase_id: { type: 'integer' }, document_id: { type: 'integer' } },
+      ['knowledgebase_id', 'document_id']
+    ),
+  },
+  {
+    name: 'create_document',
+    description:
+      'Add a website (URL-scraped) document to a knowledge base. File uploads (pdf/txt/docx) must use the Famulor dashboard or a direct multipart/form-data call.',
+    inputSchema: Schema(
+      {
+        knowledgebase_id: { type: 'integer' },
+        name: { type: 'string', description: 'Max 255 chars' },
+        description: { type: 'string', description: 'Optional, max 255 chars' },
+        type: { type: 'string', enum: ['website'], description: 'Only website is supported via MCP' },
+        url: { type: 'string', description: 'Main URL to scrape (required if links is not set)' },
+        links: {
+          type: 'array',
+          items: { type: 'object', properties: { link: { type: 'string' } }, required: ['link'] },
+        },
+        relative_links_limit: { type: 'integer' },
+      },
+      ['knowledgebase_id', 'name', 'type']
+    ),
+  },
+  {
+    name: 'update_document',
+    description: 'Update a document name or description. Content cannot be changed.',
+    inputSchema: Schema(
+      {
+        knowledgebase_id: { type: 'integer' },
+        document_id: { type: 'integer' },
+        name: { type: 'string' },
+        description: { type: 'string' },
+      },
+      ['knowledgebase_id', 'document_id']
+    ),
+  },
+  {
+    name: 'delete_document',
+    description: 'Delete a document from a knowledge base.',
+    inputSchema: Schema(
+      { knowledgebase_id: { type: 'integer' }, document_id: { type: 'integer' } },
+      ['knowledgebase_id', 'document_id']
+    ),
+  },
+
+  // -- Phone numbers
+  {
+    name: 'list_all_phone_numbers',
+    description: 'List every phone number on the account (regardless of SMS or subscription status).',
+    inputSchema: Schema({}),
+  },
+  {
+    name: 'search_phone_numbers',
+    description: 'Search for purchasable phone numbers via the Famulor provider.',
+    inputSchema: Schema({
+      country_code: { type: 'string', description: 'ISO 3166-1 alpha-2, default DE' },
+      contains: { type: 'string', description: 'Digits the number should contain (numeric only, max 10)' },
+    }),
+  },
+  {
+    name: 'purchase_phone_number',
+    description: 'Purchase a phone number returned by search_phone_numbers (monthly subscription).',
+    inputSchema: Schema({ phone_number: { type: 'string' } }, ['phone_number']),
+  },
+  {
+    name: 'release_phone_number',
+    description: 'Release (cancel) a purchased phone number.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+
+  // -- SIP trunks
+  {
+    name: 'list_sip_trunks',
+    description: 'List all SIP trunks on the account.',
+    inputSchema: Schema({}),
+  },
+  {
+    name: 'get_sip_trunk',
+    description: 'Get a SIP trunk by ID.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+  {
+    name: 'create_sip_trunk',
+    description: 'Provision a new SIP trunk (extension or DID number).',
+    inputSchema: Schema(
+      {
+        sip_trunk_type: { type: 'string', enum: ['extension', 'number'] },
+        phone_number: { type: 'string', description: 'Extension (1-15 chars) or E.164 number' },
+        sip_username: { type: 'string', description: '3-128 chars' },
+        sip_password: { type: 'string', description: 'Min 3 chars' },
+        sip_address: { type: 'string', description: 'SIP server without port' },
+        sip_calling_format: { type: 'string', enum: ['+e164', 'e164', 'national'] },
+        inbound_authorization_type: { type: 'string', enum: ['auth', 'ip'] },
+        allowed_inbound_ips: { type: 'array', items: { type: 'string' } },
+        country_code: { type: 'string', description: 'ISO 3166-2, e.g. US/GB/DE' },
+        outbound_proxy: { type: 'boolean' },
+      },
+      [
+        'sip_trunk_type',
+        'phone_number',
+        'sip_username',
+        'sip_password',
+        'sip_address',
+        'sip_calling_format',
+        'inbound_authorization_type',
+        'country_code',
+      ]
+    ),
+  },
+  {
+    name: 'update_sip_trunk',
+    description: 'Update a SIP trunk (partial).',
+    inputSchema: Schema(
+      {
+        id: { type: 'integer' },
+        phone_number: { type: 'string' },
+        sip_username: { type: 'string' },
+        sip_password: { type: 'string' },
+        sip_address: { type: 'string' },
+        sip_calling_format: { type: 'string', enum: ['+e164', 'e164', 'national'] },
+        inbound_authorization_type: { type: 'string', enum: ['auth', 'ip'] },
+        allowed_inbound_ips: { type: 'array', items: { type: 'string' } },
+        country_code: { type: 'string' },
+        outbound_proxy: { type: 'boolean' },
+      },
+      ['id']
+    ),
+  },
+  {
+    name: 'delete_sip_trunk',
+    description: 'Delete a SIP trunk by phone-number ID.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+
+  // -- WhatsApp
+  {
+    name: 'get_whatsapp_senders',
+    description: 'List WhatsApp Business senders. status defaults to "online" — pass "all" to see all.',
+    inputSchema: Schema({ status: { type: 'string' } }),
+  },
+  {
+    name: 'get_whatsapp_templates',
+    description: 'List approved templates for a WhatsApp sender (status defaults to "approved").',
+    inputSchema: Schema(
+      { sender_id: { type: 'integer' }, status: { type: 'string' } },
+      ['sender_id']
+    ),
+  },
+  {
+    name: 'get_whatsapp_session_status',
+    description: 'Check whether a 24h messaging window is open for a recipient.',
+    inputSchema: Schema(
+      { sender_id: { type: 'integer' }, recipient_phone: { type: 'string' } },
+      ['sender_id', 'recipient_phone']
+    ),
+  },
+  {
+    name: 'send_whatsapp_template',
+    description:
+      'Send a WhatsApp template message (required when initiating or outside the 24h window).',
+    inputSchema: Schema(
+      {
+        sender_id: { type: 'integer' },
+        template_id: { type: 'integer' },
+        recipient_phone: { type: 'string', description: 'E.164' },
+        recipient_name: { type: 'string' },
+        variables: { type: 'object', additionalProperties: true },
+      },
+      ['sender_id', 'template_id', 'recipient_phone']
+    ),
+  },
+  {
+    name: 'send_whatsapp_freeform',
+    description:
+      'Send a freeform WhatsApp message. Requires an open 24h session (use get_whatsapp_session_status to check).',
+    inputSchema: Schema(
+      {
+        sender_id: { type: 'integer' },
+        recipient_phone: { type: 'string' },
+        message: { type: 'string', description: 'Max 4096 chars' },
+      },
+      ['sender_id', 'recipient_phone', 'message']
+    ),
+  },
+
+  // -- AI replies
+  {
+    name: 'generate_ai_reply',
+    description:
+      'Generate a context-aware AI reply for a customer message. The system keeps conversation state per customer_identifier (e.g. phone, email, CRM ID).',
+    inputSchema: Schema(
+      {
+        assistant_id: { type: 'integer' },
+        customer_identifier: { type: 'string', description: 'Stable per-customer ID; max 255 chars' },
+        message: { type: 'string' },
+        variables: { type: 'object', additionalProperties: true },
+      },
+      ['assistant_id', 'customer_identifier', 'message']
+    ),
+  },
+];
+
 export async function setupFamulorServer(server: Server): Promise<void> {
-  // Initialize user config storage
-  // This will be populated when users set their API key via the Config API
   if (!(server as any).userConfig) {
     (server as any).userConfig = {};
   }
 
-  // Note: User configuration (API keys) will be handled by the OpenAI Apps SDK
-  // When deployed online, users will enter their API key through the ChatGPT/Claude UI
-  // The API key will be passed to the server via the MCP protocol in each request
-  //
-  // For local development, users can set it via:
-  // 1. MCP config file (mcp.json) with env variable
-  // 2. Environment variable FAMULOR_API_KEY
-  //
-  // For production (OpenAI App Store):
-  // - Users enter API key in ChatGPT/Claude UI
-  // - OpenAI Apps SDK passes it to the server per-request
-  // - Server uses it to authenticate with Famulor API
-
-  // Register all tools with a single handler
-  // The client will be created per-request using the user's API key
   await registerAllTools(server);
 
-  // Note: User configuration (API keys) is handled by the OpenAI Apps SDK
-  // When users connect via the App Store, the Apps SDK passes the API key
-  // in the request context. We access it via server.userConfig or server.config
-  // which is populated by the Apps SDK automatically.
-
-  // List tools handler
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-      tools: [
-        // Call tools
-        {
-          name: 'make_call',
-          description: 'Make an AI-powered phone call with a Famulor AI assistant',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              assistant_id: {
-                type: 'string',
-                description: 'The ID of the AI assistant that should make the call',
-              },
-              phone_number: {
-                type: 'string',
-                description: 'The phone number to call (E.164 format)',
-              },
-              variables: {
-                type: 'object',
-                description: 'Optional variables for personalizing the conversation',
-                additionalProperties: true,
-              },
-            },
-            required: ['assistant_id', 'phone_number'],
-          },
-        },
-        {
-          name: 'get_call',
-          description: 'Get details of a specific call by call ID',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              call_id: {
-                type: 'string',
-                description: 'The unique ID of the call',
-              },
-            },
-            required: ['call_id'],
-          },
-        },
-        {
-          name: 'list_calls',
-          description: 'List all calls with optional filter options (paginated)',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              assistant_id: {
-                type: 'string',
-                description: 'Filter by assistant ID',
-              },
-              page: {
-                type: 'number',
-                description: 'Page number (default: 1)',
-              },
-              per_page: {
-                type: 'number',
-                description: 'Number of calls per page (default: 15)',
-              },
-            },
-          },
-        },
-        // Assistant tools
-        {
-          name: 'get_assistants',
-          description:
-            'Get all available AI assistants from the Famulor account (paginated). Returns assistant configuration including variables that can be used when creating leads. Variable names are fixed in the assistant configuration and must be used exactly as defined when creating leads.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              page: {
-                type: 'number',
-                description: 'Page number (default: 1)',
-              },
-              per_page: {
-                type: 'number',
-                description: 'Number of assistants per page (default: 10)',
-              },
-            },
-          },
-        },
-        {
-          name: 'get_phone_numbers',
-          description:
-            'Get all available phone numbers for assistant assignment',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              type: {
-                type: 'string',
-                enum: ['inbound', 'outbound'],
-                description:
-                  'Filter phone numbers by assistant type. Options: inbound, outbound',
-              },
-            },
-          },
-        },
-        {
-          name: 'get_models',
-          description:
-            'Get all available LLM models for assistant configuration',
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-        {
-          name: 'get_voices',
-          description:
-            'Get all available voices for assistant configuration',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              mode: {
-                type: 'string',
-                enum: ['pipeline', 'multimodal'],
-                description:
-                  'Filter voices by assistant mode. Options: pipeline, multimodal',
-              },
-            },
-          },
-        },
-        {
-          name: 'get_languages',
-          description:
-            'Get all available languages for assistant configuration',
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-        {
-          name: 'update_assistant',
-          description: 'Update the configuration of an existing AI assistant',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              id: {
-                type: 'number',
-                description: 'The unique identifier of the assistant to update',
-              },
-              assistant_name: {
-                type: 'string',
-                description: 'The name of the assistant (max. 255 characters)',
-              },
-              voice_id: {
-                type: 'number',
-                description:
-                  'The voice ID for the assistant (must exist in available voices)',
-              },
-              language: {
-                type: 'string',
-                description: 'The language name for the assistant (max. 100 characters)',
-              },
-              llm_model: {
-                type: 'string',
-                description: 'The name of the LLM model to use (max. 100 characters)',
-              },
-              calls_direction: {
-                type: 'string',
-                enum: ['receive', 'make'],
-                description: 'The call direction type. Options: receive, make',
-              },
-              engine_type: {
-                type: 'string',
-                enum: ['pipeline', 'multimodal'],
-                description: 'The engine type to use. Options: pipeline, multimodal',
-              },
-              timezone: {
-                type: 'string',
-                description: 'The timezone for the assistant (e.g., "Europe/Berlin")',
-              },
-              initial_message: {
-                type: 'string',
-                description:
-                  'The first message the assistant will speak at call start',
-              },
-              system_prompt: {
-                type: 'string',
-                description:
-                  'The system prompt that defines the assistant behavior and personality',
-              },
-              phone_number_id: {
-                type: ['number', 'null'],
-                description:
-                  'The ID of a phone number to assign to the assistant (set to null to remove)',
-              },
-              tool_ids: {
-                type: 'array',
-                items: { type: 'number' },
-                description:
-                  'Array of mid-call action IDs to sync with the assistant. Replaces all existing tool assignments. Pass an empty array to remove all tools.',
-              },
-              endpoint_type: {
-                type: 'string',
-                enum: ['vad', 'ai'],
-                description: 'Voice activity detection type. Options: vad, ai',
-              },
-              endpoint_sensitivity: {
-                type: 'number',
-                description: 'Endpoint sensitivity level (0-5)',
-              },
-              interrupt_sensitivity: {
-                type: 'number',
-                description: 'Interruption sensitivity level (0-5)',
-              },
-              ambient_sound_volume: {
-                type: 'number',
-                description: 'Ambient sound volume (0-1)',
-              },
-              post_call_evaluation: {
-                type: 'boolean',
-                description: 'Whether to enable post-call evaluation',
-              },
-              send_webhook_only_on_completed: {
-                type: 'boolean',
-                description:
-                  'Whether to send webhooks only on completed calls',
-              },
-              include_recording_in_webhook: {
-                type: 'boolean',
-                description:
-                  'Whether to include recording URL in webhook payload',
-              },
-              is_webhook_active: {
-                type: 'boolean',
-                description: 'Whether webhook notifications are enabled',
-              },
-              webhook_url: {
-                type: ['string', 'null'],
-                description:
-                  'The webhook URL for post-call notifications (can be set to null to remove)',
-              },
-              use_min_interrupt_words: {
-                type: 'boolean',
-                description:
-                  'Whether to use the minimum interrupt words setting',
-              },
-              min_interrupt_words: {
-                type: 'number',
-                description:
-                  'Minimum number of words before allowed interruption (0-10)',
-              },
-              variables: {
-                type: 'object',
-                description:
-                  'Key-value pairs of custom variables for the assistant',
-              },
-              post_call_schema: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    name: {
-                      type: 'string',
-                      description:
-                        'The name of the schema field (alphanumeric and underscores only)',
-                    },
-                    type: {
-                      type: 'string',
-                      enum: ['string', 'number', 'bool'],
-                      description: 'The data type. Options: string, number, bool',
-                    },
-                    description: {
-                      type: 'string',
-                      description: 'Description of what this field represents',
-                    },
-                  },
-                  required: ['name', 'type', 'description'],
-                },
-                description: 'Schema definition for post-call data extraction',
-              },
-              end_call_tool: {
-                type: 'object',
-                properties: {
-                  description: {
-                    type: 'string',
-                    description:
-                      'Description for the end call tool functionality (max. 500 characters)',
-                  },
-                },
-                description: 'End call tool configuration',
-              },
-              llm_temperature: {
-                type: 'number',
-                description: 'LLM temperature setting (0-1)',
-              },
-              voice_stability: {
-                type: 'number',
-                description: 'Voice stability setting (0-1)',
-              },
-              voice_similarity: {
-                type: 'number',
-                description: 'Voice similarity setting (0-1)',
-              },
-              speech_speed: {
-                type: 'number',
-                description: 'Speech speed multiplier (0.7-1.2)',
-              },
-              allow_interruptions: {
-                type: 'boolean',
-                description:
-                  'Whether interruptions by the caller are allowed',
-              },
-              filler_audios: {
-                type: 'boolean',
-                description:
-                  'Whether to use filler audio during processing',
-              },
-              re_engagement_interval: {
-                type: 'number',
-                description: 'Re-engagement interval in seconds (7-600)',
-              },
-              max_call_duration: {
-                type: 'number',
-                description: 'Maximum call duration in seconds (20-1200)',
-              },
-              max_silence_duration: {
-                type: 'number',
-                description: 'Maximum silence duration in seconds (1-120)',
-              },
-              end_call_on_voicemail: {
-                type: 'boolean',
-                description: 'Whether to end call on voicemail detection',
-              },
-              noise_cancellation: {
-                type: 'boolean',
-                description: 'Whether noise cancellation is enabled',
-              },
-              record_call: {
-                type: 'boolean',
-                description: 'Whether the call should be recorded',
-              },
-              who_speaks_first: {
-                type: 'string',
-                enum: ['AI assistant', 'Customer'],
-                description: 'Who speaks first in the call. Options: AI assistant, Customer',
-              },
-            },
-            required: ['id'],
-          },
-        },
-        // Conversation tools
-        {
-          name: 'get_conversation',
-          description: 'Get the complete message history of an existing Famulor conversation by UUID',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              uuid: {
-                type: 'string',
-                description: 'The UUID of the conversation to retrieve',
-              },
-            },
-            required: ['uuid'],
-          },
-        },
-        {
-          name: 'create_conversation',
-          description:
-            'Start a new chat session with an AI assistant. Creates a widget or test conversation and returns the initial history.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              assistant_id: {
-                type: 'string',
-                description: 'UUID of the assistant that will handle the conversation',
-              },
-              type: {
-                type: 'string',
-                enum: ['widget', 'test'],
-                description:
-                  'Conversation type. Options: widget (paid) or test (free for development)',
-              },
-              variables: {
-                type: 'object',
-                description:
-                  'Custom variables to inject into the assistant context (accessible via {{variable_name}})',
-              },
-            },
-            required: ['assistant_id'],
-          },
-        },
-        {
-          name: 'send_message',
-          description:
-            'Send a user message to an existing conversation and receive the assistant response',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              uuid: {
-                type: 'string',
-                description: 'UUID of the existing conversation',
-              },
-              message: {
-                type: 'string',
-                description: 'User message to send (max. 2000 characters)',
-              },
-            },
-            required: ['uuid', 'message'],
-          },
-        },
-        // Campaign tools
-        {
-          name: 'list_campaigns',
-          description: 'List all campaigns from the Famulor account',
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-        {
-          name: 'update_campaign_status',
-          description: 'Start or stop a campaign in the Famulor system',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              campaign_id: {
-                type: 'number',
-                description: 'The ID of the campaign to update',
-              },
-              action: {
-                type: 'string',
-                enum: ['start', 'stop'],
-                description: 'The action to perform on the campaign: start or stop',
-              },
-            },
-            required: ['campaign_id', 'action'],
-          },
-        },
-        // Lead tools
-        {
-          name: 'list_leads',
-          description: 'List all leads for the authenticated user (paginated)',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              page: {
-                type: 'number',
-                description: 'Page number (default: 1)',
-              },
-              per_page: {
-                type: 'number',
-                description: 'Number of leads per page (default: 15)',
-              },
-            },
-          },
-        },
-        {
-          name: 'create_lead',
-          description: 'Create a new lead in the Famulor system',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              phone_number: {
-                type: 'string',
-                description: 'The phone number of the lead in E.164 format (e.g., +1234567890)',
-              },
-              campaign_id: {
-                type: 'number',
-                description: 'The ID of the campaign for which the lead should be created',
-              },
-              variables: {
-                type: 'array',
-                description:
-                  'Array of variable objects to be passed to the lead. IMPORTANT: Variable names come from the assistant associated with the campaign and are FIXED. You can only add values for these variables, but the variable names cannot be changed. To see available variables, use get_assistants to retrieve the assistant configuration. If you need to change variable names, you must update the assistant (but this is dangerous as it may affect existing leads and calls).',
-                items: {
-                  type: 'object',
-                  additionalProperties: true,
-                  description:
-                    'Variable object with keys matching the assistant variable names. The variable names are fixed in the assistant configuration and cannot be modified here.',
-                },
-              },
-              allow_dupplicate: {
-                type: 'boolean',
-                description: 'Whether duplicate leads are allowed in a campaign',
-              },
-            },
-            required: ['phone_number', 'campaign_id'],
-          },
-        },
-        {
-          name: 'update_lead',
-          description: 'Update an existing lead in your campaigns',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              id: {
-                type: 'number',
-                description: 'The ID of the lead to update',
-              },
-              campaign_id: {
-                type: 'number',
-                description: 'The ID of the campaign to assign the lead to',
-              },
-              phone_number: {
-                type: 'string',
-                description: 'The phone number of the lead (automatically formatted to E.164 format)',
-              },
-              status: {
-                type: 'string',
-                enum: ['created', 'completed', 'reached-max-retries'],
-                description: 'The status of the lead',
-              },
-              variables: {
-                type: 'object',
-                description:
-                  'Custom variables to be merged with existing lead variables. IMPORTANT: Variable names come from the assistant associated with the campaign and are FIXED. You can only update values for these variables, but the variable names cannot be changed. To see available variables, use get_assistants to retrieve the assistant configuration. If you need to change variable names, you must update the assistant (but this is dangerous as it may affect existing leads and calls).',
-                additionalProperties: true,
-              },
-            },
-            required: ['id'],
-          },
-        },
-        // SMS Tools
-        {
-          name: 'send_sms',
-          description:
-            'Send an SMS message via your phone number. The SMS is sent via Twilio and costs are automatically deducted from your account balance.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              from: {
-                type: 'number',
-                description:
-                  'The ID of your phone number from which the SMS should be sent (must be SMS-capable)',
-              },
-              to: {
-                type: 'string',
-                description:
-                  'The recipient phone number in international format (e.g., "+4915123456789")',
-              },
-              body: {
-                type: 'string',
-                description: 'The SMS message content (max. 300 characters)',
-              },
-            },
-            required: ['from', 'to', 'body'],
-          },
-        },
-        // Mid-Call Tools
-        {
-          name: 'list_mid_call_tools',
-          description: 'List all mid-call tools that allow AI assistants to interact with external APIs during calls',
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-        {
-          name: 'get_mid_call_tool',
-          description: 'Get detailed information about a specific mid-call tool by ID',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              id: {
-                type: 'number',
-                description: 'The unique ID of the mid-call tool',
-              },
-            },
-            required: ['id'],
-          },
-        },
-        {
-          name: 'update_mid_call_tool',
-          description: 'Update an existing mid-call tool',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              id: {
-                type: 'number',
-                description: 'The unique ID of the tool to update',
-              },
-              name: {
-                type: 'string',
-                description: 'Tool name (lowercase letters and underscores only, must start with a letter)',
-              },
-              description: {
-                type: 'string',
-                description: 'Detailed explanation of when and how the AI should use this tool (max 255 characters)',
-              },
-              endpoint: {
-                type: 'string',
-                description: 'Valid URL of the API endpoint to call',
-              },
-              method: {
-                type: 'string',
-                enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-                description: 'HTTP method',
-              },
-              timeout: {
-                type: 'number',
-                description: 'Request timeout in seconds (1-30)',
-              },
-              headers: {
-                type: 'array',
-                description: 'HTTP headers to send with the request (replaces existing headers)',
-                items: {
-                  type: 'object',
-                  properties: {
-                    name: {
-                      type: 'string',
-                    },
-                    value: {
-                      type: 'string',
-                    },
-                  },
-                  required: ['name', 'value'],
-                },
-              },
-              schema: {
-                type: 'array',
-                description: 'Parameter schema (replaces existing schema)',
-                items: {
-                  type: 'object',
-                  properties: {
-                    name: {
-                      type: 'string',
-                      description: 'Parameter name (2-32 characters)',
-                    },
-                    type: {
-                      type: 'string',
-                      enum: ['string', 'number', 'boolean'],
-                      description: 'Parameter type',
-                    },
-                    description: {
-                      type: 'string',
-                      description: 'Parameter description (3-255 characters)',
-                    },
-                  },
-                  required: ['name', 'type', 'description'],
-                },
-              },
-            },
-            required: ['id'],
-          },
-        },
-      ],
-    };
-  });
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
 }
-

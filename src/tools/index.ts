@@ -1,7 +1,9 @@
 /**
- * Tool Registration
+ * Tool router — dispatches incoming tool calls to the right handler.
  *
- * Registers all Famulor tools with the MCP server
+ * The Famulor API key for the current request is read from the MCP server's
+ * userConfig, which is populated per-request from the OAuth bearer token
+ * (see api/index.ts).
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -14,102 +16,160 @@ import { handleCampaignTools } from './campaigns.js';
 import { handleLeadTools } from './leads.js';
 import { handleMidCallToolTools } from './midCallTools.js';
 import { handleSmsTools } from './sms.js';
+import { handleKnowledgebaseTools } from './knowledgebases.js';
+import { handlePhoneNumberTools } from './phoneNumbers.js';
+import { handleSipTrunkTools } from './sipTrunks.js';
+import { handleWhatsappTools } from './whatsapp.js';
+import { handleAiReplyTools } from './aiReplies.js';
+import { handleUserTools } from './user.js';
 
-/**
- * Get Famulor client from user's stored API key
- *
- * Tries multiple sources in order:
- * 1. MCP userConfig (set by user via Config API in ChatGPT/Claude UI)
- * 2. MCP config (legacy, for backward compatibility)
- * 3. Environment variable (for development/testing only)
- *
- * IMPORTANT: In production (OpenAI App Store), users will enter their API key
- * through the ChatGPT/Claude UI, which will be stored in userConfig.
- */
+const TOOL_GROUPS: Record<string, (name: string, args: unknown, client: FamulorClient) => Promise<unknown>> = {};
+
+const register = (
+  names: string[],
+  handler: (name: string, args: unknown, client: FamulorClient) => Promise<unknown>
+) => {
+  for (const n of names) TOOL_GROUPS[n] = handler;
+};
+
+register(['make_call', 'get_call', 'list_calls', 'delete_call'], handleCallTools);
+
+register(
+  [
+    'get_assistants',
+    'get_outbound_assistants',
+    'get_phone_numbers',
+    'get_models',
+    'get_voices',
+    'get_languages',
+    'get_synthesizer_providers',
+    'get_transcriber_providers',
+    'create_assistant',
+    'update_assistant',
+    'delete_assistant',
+    'enable_assistant_inbound_webhook',
+    'disable_assistant_inbound_webhook',
+    'enable_assistant_conversation_ended_webhook',
+    'disable_assistant_conversation_ended_webhook',
+    'disable_assistant_webhook',
+  ],
+  handleAssistantTools
+);
+
+register(
+  [
+    'list_conversations',
+    'get_conversation',
+    'create_conversation',
+    'send_message',
+    'enable_conversation_ai',
+    'disable_conversation_ai',
+  ],
+  handleConversationTools
+);
+
+register(
+  ['list_campaigns', 'create_campaign', 'update_campaign_status', 'delete_campaign'],
+  handleCampaignTools
+);
+
+register(['list_leads', 'create_lead', 'update_lead', 'delete_lead'], handleLeadTools);
+
+register(
+  [
+    'list_mid_call_tools',
+    'get_mid_call_tool',
+    'create_mid_call_tool',
+    'update_mid_call_tool',
+    'delete_mid_call_tool',
+  ],
+  handleMidCallToolTools
+);
+
+register(['send_sms'], handleSmsTools);
+
+register(
+  [
+    'list_knowledgebases',
+    'get_knowledgebase',
+    'create_knowledgebase',
+    'update_knowledgebase',
+    'delete_knowledgebase',
+    'list_documents',
+    'get_document',
+    'create_document',
+    'update_document',
+    'delete_document',
+  ],
+  handleKnowledgebaseTools
+);
+
+register(
+  [
+    'list_all_phone_numbers',
+    'search_phone_numbers',
+    'purchase_phone_number',
+    'release_phone_number',
+  ],
+  handlePhoneNumberTools
+);
+
+register(
+  [
+    'list_sip_trunks',
+    'get_sip_trunk',
+    'create_sip_trunk',
+    'update_sip_trunk',
+    'delete_sip_trunk',
+  ],
+  handleSipTrunkTools
+);
+
+register(
+  [
+    'get_whatsapp_senders',
+    'get_whatsapp_templates',
+    'get_whatsapp_session_status',
+    'send_whatsapp_template',
+    'send_whatsapp_freeform',
+  ],
+  handleWhatsappTools
+);
+
+register(['generate_ai_reply'], handleAiReplyTools);
+
+register(['get_me'], handleUserTools);
+
 function getClientFromConfig(server: Server): FamulorClient {
-  // Try userConfig first (set via Config API by user in UI)
   const userConfig = (server as any).userConfig || {};
   let apiKey = userConfig.famulor_api_key;
 
-  // Fallback to legacy config
   if (!apiKey) {
     const config = (server as any).config || {};
     apiKey = config.famulor_api_key;
   }
 
-  // Fallback to environment variable (development/testing only)
-  // This should NOT be used in production
   if (!apiKey) {
     apiKey = process.env.FAMULOR_API_KEY;
   }
 
   if (!apiKey) {
     throw new Error(
-      'Authentication not configured.\n\n' +
-      'Please configure your API key in the app settings.\n\n' +
-      'To get your API key: https://app.famulor.de/api-keys'
+      'Authentication not configured. Get an API key at https://app.famulor.de/api-keys and connect this MCP server via OAuth.'
     );
   }
 
   return new FamulorClient(apiKey);
 }
 
-/**
- * Register all tools with a single unified handler
- * The client is created per-request using the user's API key from config
- */
 export async function registerAllTools(server: Server): Promise<void> {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
-
-    // Get client with user's API key for this request
+    const handler = TOOL_GROUPS[name];
+    if (!handler) {
+      throw new Error(`Unknown tool: ${name}`);
+    }
     const client = getClientFromConfig(server);
-
-    // Route to appropriate tool handler
-    if (['make_call', 'get_call', 'list_calls'].includes(name)) {
-      return handleCallTools(name, args, client);
-    }
-
-    if (
-      [
-        'get_assistants',
-        'get_phone_numbers',
-        'get_models',
-        'get_voices',
-        'get_languages',
-        'update_assistant',
-      ].includes(name)
-    ) {
-      return handleAssistantTools(name, args, client);
-    }
-
-    if (
-      ['get_conversation', 'create_conversation', 'send_message'].includes(name)
-    ) {
-      return handleConversationTools(name, args, client);
-    }
-
-    if (['list_campaigns', 'update_campaign_status'].includes(name)) {
-      return handleCampaignTools(name, args, client);
-    }
-
-    if (['list_leads', 'create_lead', 'update_lead'].includes(name)) {
-      return handleLeadTools(name, args, client);
-    }
-
-    if (
-      ['list_mid_call_tools', 'get_mid_call_tool', 'update_mid_call_tool'].includes(
-        name
-      )
-    ) {
-      return handleMidCallToolTools(name, args, client);
-    }
-
-    if (['send_sms'].includes(name)) {
-      return handleSmsTools(name, args, client);
-    }
-
-    throw new Error(`Unknown tool: ${name}`);
+    return handler(name, args, client) as Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }>;
   });
 }
-
