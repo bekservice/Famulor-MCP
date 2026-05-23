@@ -11,9 +11,31 @@
 </p>
 
 <p align="center">
-  <a href="https://mcp.famulor.io">mcp.famulor.io</a> · 
-  <a href="https://app.famulor.de/api-keys">Get an API key</a> · 
+  <a href="https://mcp.famulor.io">mcp.famulor.io</a> ·
+  <a href="https://app.famulor.de/api-keys">Get an API key</a> ·
   <a href="https://docs.famulor.io">Docs</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/bekservice/Famulor-MCP">
+    <img src="https://img.shields.io/badge/GitHub-bekservice%2FFamulor--MCP-181717?logo=github" alt="GitHub" />
+  </a>
+  <a href="https://www.famulor.io">
+    <img src="https://img.shields.io/badge/Famulor-voice%20agents-29C5F6" alt="Famulor" />
+  </a>
+  <a href="https://modelcontextprotocol.io">
+    <img src="https://img.shields.io/badge/protocol-MCP-blueviolet" alt="MCP" />
+  </a>
+  <a href="https://vercel.com">
+    <img src="https://img.shields.io/badge/hosted%20on-Vercel-000000?logo=vercel" alt="Vercel" />
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT" />
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://www.famulor.io/_next/image?url=https%3A%2F%2Fanzpxaqhcbkfyqdk.public.blob.vercel-storage.com%2Fblog-images%2F1766256900040-79z4hr1mztw.webp&w=3840&q=75" alt="Famulor AI voice agents" width="100%" />
 </p>
 
 ---
