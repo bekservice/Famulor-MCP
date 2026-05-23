@@ -27,11 +27,166 @@ type ToolAnnotations = {
   openWorldHint: boolean;
 };
 
+type JsonSchema = Record<string, unknown>;
+
 type ToolDef = {
   name: string;
   description: string;
   inputSchema: ReturnType<typeof Schema>;
+  outputSchema?: JsonSchema;
   annotations?: ToolAnnotations;
+};
+
+/**
+ * Output schemas — Famulor's REST API returns a few recurring shapes. We
+ * map each tool to one of these so models can plan around the result without
+ * needing to call the tool once just to inspect the structure.
+ *
+ * All schemas use additionalProperties:true since Famulor occasionally adds
+ * new fields (e.g. when they ship new assistant settings) and we don't want
+ * to invalidate the schema.
+ *
+ * Bare arrays returned by Famulor get wrapped under a `result` key by
+ * src/tools/_util.ts:textResult so the structuredContent stays a valid
+ * JSON object.
+ */
+const SCHEMA_PAGINATED: JsonSchema = {
+  type: 'object',
+  additionalProperties: true,
+  properties: {
+    current_page: { type: 'number' },
+    data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+    last_page: { type: 'number' },
+    per_page: { type: 'number' },
+    total: { type: 'number' },
+    from: { type: ['number', 'null'] },
+    to: { type: ['number', 'null'] },
+    next_page_url: { type: ['string', 'null'] },
+    prev_page_url: { type: ['string', 'null'] },
+  },
+};
+
+const SCHEMA_DATA_WRAPPER: JsonSchema = {
+  type: 'object',
+  additionalProperties: true,
+  properties: {
+    data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+  },
+  required: ['data'],
+};
+
+const SCHEMA_LIST_WRAPPED: JsonSchema = {
+  type: 'object',
+  additionalProperties: true,
+  properties: {
+    result: { type: 'array', items: { type: 'object', additionalProperties: true } },
+  },
+  required: ['result'],
+};
+
+const SCHEMA_SINGLE: JsonSchema = {
+  type: 'object',
+  additionalProperties: true,
+};
+
+const SCHEMA_ACTION: JsonSchema = {
+  type: 'object',
+  additionalProperties: true,
+  properties: {
+    message: { type: 'string' },
+    data: { type: ['object', 'array', 'null'], additionalProperties: true },
+  },
+};
+
+const SCHEMA_USER: JsonSchema = {
+  type: 'object',
+  additionalProperties: true,
+  properties: {
+    name: { type: 'string' },
+    email: { type: 'string' },
+    total_balance: { type: 'number' },
+  },
+};
+
+// Tool name → outputSchema. Anything not listed falls back to SCHEMA_SINGLE.
+const OUTPUT_SCHEMAS: Record<string, JsonSchema> = {
+  // user
+  get_me: SCHEMA_USER,
+
+  // paginated list endpoints (Laravel paginator shape)
+  get_assistants: SCHEMA_PAGINATED,
+  list_calls: SCHEMA_PAGINATED,
+  list_leads: SCHEMA_PAGINATED,
+  list_conversations: SCHEMA_PAGINATED,
+
+  // bare arrays (wrapped under `result` by our text helper)
+  get_languages: SCHEMA_LIST_WRAPPED,
+  get_models: SCHEMA_LIST_WRAPPED,
+  get_voices: SCHEMA_LIST_WRAPPED,
+  get_phone_numbers: SCHEMA_LIST_WRAPPED,
+  get_outbound_assistants: SCHEMA_LIST_WRAPPED,
+  get_synthesizer_providers: SCHEMA_LIST_WRAPPED,
+  get_transcriber_providers: SCHEMA_LIST_WRAPPED,
+  list_campaigns: SCHEMA_LIST_WRAPPED,
+  list_mid_call_tools: SCHEMA_LIST_WRAPPED,
+  search_phone_numbers: SCHEMA_LIST_WRAPPED,
+
+  // {data:[…]} wrapper shape
+  list_knowledgebases: SCHEMA_DATA_WRAPPER,
+  list_documents: SCHEMA_DATA_WRAPPER,
+  list_sip_trunks: SCHEMA_DATA_WRAPPER,
+  list_all_phone_numbers: SCHEMA_DATA_WRAPPER,
+  get_whatsapp_senders: SCHEMA_DATA_WRAPPER,
+  get_whatsapp_templates: SCHEMA_DATA_WRAPPER,
+
+  // single-resource reads
+  get_call: SCHEMA_SINGLE,
+  get_conversation: SCHEMA_SINGLE,
+  get_knowledgebase: SCHEMA_SINGLE,
+  get_document: SCHEMA_SINGLE,
+  get_sip_trunk: SCHEMA_SINGLE,
+  get_mid_call_tool: SCHEMA_SINGLE,
+  get_whatsapp_session_status: SCHEMA_SINGLE,
+
+  // write actions (create / update / delete / send / start / stop)
+  make_call: SCHEMA_ACTION,
+  create_assistant: SCHEMA_ACTION,
+  update_assistant: SCHEMA_ACTION,
+  delete_assistant: SCHEMA_ACTION,
+  delete_call: SCHEMA_ACTION,
+  enable_assistant_inbound_webhook: SCHEMA_ACTION,
+  disable_assistant_inbound_webhook: SCHEMA_ACTION,
+  enable_assistant_conversation_ended_webhook: SCHEMA_ACTION,
+  disable_assistant_conversation_ended_webhook: SCHEMA_ACTION,
+  disable_assistant_webhook: SCHEMA_ACTION,
+  create_conversation: SCHEMA_ACTION,
+  send_message: SCHEMA_ACTION,
+  enable_conversation_ai: SCHEMA_ACTION,
+  disable_conversation_ai: SCHEMA_ACTION,
+  create_campaign: SCHEMA_ACTION,
+  update_campaign_status: SCHEMA_ACTION,
+  delete_campaign: SCHEMA_ACTION,
+  create_lead: SCHEMA_ACTION,
+  update_lead: SCHEMA_ACTION,
+  delete_lead: SCHEMA_ACTION,
+  send_sms: SCHEMA_ACTION,
+  create_mid_call_tool: SCHEMA_ACTION,
+  update_mid_call_tool: SCHEMA_ACTION,
+  delete_mid_call_tool: SCHEMA_ACTION,
+  create_knowledgebase: SCHEMA_ACTION,
+  update_knowledgebase: SCHEMA_ACTION,
+  delete_knowledgebase: SCHEMA_ACTION,
+  create_document: SCHEMA_ACTION,
+  update_document: SCHEMA_ACTION,
+  delete_document: SCHEMA_ACTION,
+  purchase_phone_number: SCHEMA_ACTION,
+  release_phone_number: SCHEMA_ACTION,
+  create_sip_trunk: SCHEMA_ACTION,
+  update_sip_trunk: SCHEMA_ACTION,
+  delete_sip_trunk: SCHEMA_ACTION,
+  send_whatsapp_template: SCHEMA_ACTION,
+  send_whatsapp_freeform: SCHEMA_ACTION,
+  generate_ai_reply: SCHEMA_ACTION,
 };
 
 /**
@@ -887,6 +1042,7 @@ export async function setupFamulorServer(server: Server): Promise<void> {
   const toolsWithAnnotations = TOOLS.map((t) => ({
     ...t,
     annotations: t.annotations ?? classify(t.name),
+    outputSchema: t.outputSchema ?? OUTPUT_SCHEMAS[t.name] ?? SCHEMA_SINGLE,
   }));
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({

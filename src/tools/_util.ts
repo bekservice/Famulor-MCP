@@ -2,7 +2,23 @@
  * Shared helpers for tool handlers.
  */
 
+/**
+ * Build a CallToolResult that includes BOTH a text view (for legacy clients
+ * and human-friendly display) AND a structuredContent payload that matches
+ * the tool's declared outputSchema.
+ *
+ * Per MCP draft spec, structuredContent MUST be a JSON object — bare arrays
+ * and scalars get wrapped under a `result` key so the schema stays valid.
+ */
 export function textResult(payload: unknown) {
+  let structured: Record<string, unknown>;
+  if (Array.isArray(payload)) {
+    structured = { result: payload };
+  } else if (payload !== null && typeof payload === 'object') {
+    structured = payload as Record<string, unknown>;
+  } else {
+    structured = { result: payload };
+  }
   return {
     content: [
       {
@@ -10,6 +26,7 @@ export function textResult(payload: unknown) {
         text: typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2),
       },
     ],
+    structuredContent: structured,
   };
 }
 
