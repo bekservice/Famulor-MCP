@@ -85,13 +85,21 @@ app.all(['/sse', '/messages', '/events'], (req, res) => {
   });
 });
 
-app.get('/', (req, res) => {
+app.get('/', (req, res, next) => {
   const issuer = resolveIssuer(req);
+  const accept = (req.headers.accept ?? '').toLowerCase();
+  const looksLikeMcp =
+    accept.includes('text/event-stream') || req.headers.authorization;
+
+  // If a client is doing an MCP probe (SSE accept or Bearer header), delegate
+  // to the MCP handler so / behaves the same as /mcp.
+  if (looksLikeMcp) {
+    return handleMcp(req, res).catch(next);
+  }
+
   // Non-browser probes (no text/html in Accept) get a 200 with a JSON
   // pointer to the real MCP endpoint. Returning a 4xx here makes ChatGPT's
   // tool-scan abort; returning text/html makes it complain about content type.
-  // A 200 + application/json with a self-describing body satisfies both.
-  const accept = (req.headers.accept ?? '').toLowerCase();
   if (!accept.includes('text/html')) {
     res.status(200).json({
       service: 'famulor-mcp',
@@ -529,7 +537,12 @@ async function handleMcp(req: Request, res: Response) {
   await transport.handleRequest(req, res, req.body);
 }
 
-app.post('/mcp', (req, res) => {
+// MCP transport is bound at /mcp (canonical) AND / (alias) so users who
+// configure the server URL without the /mcp path still get a working
+// connector. Common copy-paste mistake in ChatGPT, Cursor, etc.
+const MCP_PATHS: string[] = ['/mcp', '/'];
+
+app.post(MCP_PATHS, (req, res) => {
   handleMcp(req, res).catch((err) => {
     if (!res.headersSent) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -542,7 +555,7 @@ app.post('/mcp', (req, res) => {
   });
 });
 
-app.get('/mcp', (req, res) => {
+app.delete(MCP_PATHS, (req, res) => {
   handleMcp(req, res).catch((err) => {
     if (!res.headersSent) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -551,7 +564,7 @@ app.get('/mcp', (req, res) => {
   });
 });
 
-app.delete('/mcp', (req, res) => {
+app.get('/mcp', (req, res) => {
   handleMcp(req, res).catch((err) => {
     if (!res.headersSent) {
       const msg = err instanceof Error ? err.message : String(err);

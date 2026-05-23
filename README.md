@@ -23,6 +23,10 @@
 Add the server in your editor, then sign in with your
 [Famulor API key](https://app.famulor.de/api-keys) when prompted in the browser.
 
+> **Server URL**: `https://mcp.famulor.io/mcp` is the canonical endpoint.
+> Both `https://mcp.famulor.io/` and `https://mcp.famulor.io/mcp` work as MCP
+> URLs, so you can paste either into your client's connector dialog.
+
 <details open>
 <summary><b>Claude Code</b></summary>
 
