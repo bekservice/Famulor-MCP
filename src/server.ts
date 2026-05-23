@@ -19,11 +19,131 @@ const Schema = (
   ...(required.length ? { required } : {}),
 });
 
+type ToolAnnotations = {
+  title?: string;
+  readOnlyHint: boolean;
+  destructiveHint: boolean;
+  idempotentHint: boolean;
+  openWorldHint: boolean;
+};
+
 type ToolDef = {
   name: string;
   description: string;
   inputSchema: ReturnType<typeof Schema>;
+  annotations?: ToolAnnotations;
 };
+
+/**
+ * Every Famulor tool reaches over HTTP to app.famulor.de, so openWorldHint=true
+ * across the board. The other hints depend on what the tool does:
+ *
+ *   - DESTRUCTIVE_TOOLS  → readOnly=false, destructive=true   (delete / release)
+ *   - WRITE_TOOLS        → readOnly=false, destructive=false  (create / update / send)
+ *   - everything else    → readOnly=true,  destructive=false  (list / get / search)
+ *
+ * Idempotency: GET endpoints are idempotent; PUT updates are idempotent if you
+ * resend the same body; POST creates and sends are NOT idempotent (each call
+ * creates a new row, places a new call, sends a new message). DELETEs are
+ * effectively idempotent (a second delete just 404s).
+ */
+const DESTRUCTIVE_TOOLS = new Set<string>([
+  'delete_assistant',
+  'delete_call',
+  'delete_campaign',
+  'delete_lead',
+  'delete_mid_call_tool',
+  'delete_knowledgebase',
+  'delete_document',
+  'delete_sip_trunk',
+  'release_phone_number',
+]);
+
+const WRITE_TOOLS = new Set<string>([
+  // assistants
+  'create_assistant',
+  'update_assistant',
+  'enable_assistant_inbound_webhook',
+  'disable_assistant_inbound_webhook',
+  'enable_assistant_conversation_ended_webhook',
+  'disable_assistant_conversation_ended_webhook',
+  'disable_assistant_webhook',
+  // calls
+  'make_call',
+  // conversations
+  'create_conversation',
+  'send_message',
+  'enable_conversation_ai',
+  'disable_conversation_ai',
+  // campaigns
+  'create_campaign',
+  'update_campaign_status',
+  // leads
+  'create_lead',
+  'update_lead',
+  // sms
+  'send_sms',
+  // mid-call tools
+  'create_mid_call_tool',
+  'update_mid_call_tool',
+  // knowledgebases
+  'create_knowledgebase',
+  'update_knowledgebase',
+  'create_document',
+  'update_document',
+  // phone numbers
+  'purchase_phone_number',
+  // sip trunks
+  'create_sip_trunk',
+  'update_sip_trunk',
+  // whatsapp
+  'send_whatsapp_template',
+  'send_whatsapp_freeform',
+  // ai replies
+  'generate_ai_reply',
+]);
+
+const IDEMPOTENT_WRITES = new Set<string>([
+  'update_assistant',
+  'update_lead',
+  'update_campaign_status',
+  'update_mid_call_tool',
+  'update_knowledgebase',
+  'update_document',
+  'update_sip_trunk',
+  'enable_assistant_inbound_webhook',
+  'disable_assistant_inbound_webhook',
+  'enable_assistant_conversation_ended_webhook',
+  'disable_assistant_conversation_ended_webhook',
+  'disable_assistant_webhook',
+  'enable_conversation_ai',
+  'disable_conversation_ai',
+]);
+
+function classify(name: string): ToolAnnotations {
+  if (DESTRUCTIVE_TOOLS.has(name)) {
+    return {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true, // a second delete is a no-op (404)
+      openWorldHint: true,
+    };
+  }
+  if (WRITE_TOOLS.has(name)) {
+    return {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: IDEMPOTENT_WRITES.has(name),
+      openWorldHint: true,
+    };
+  }
+  return {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  };
+}
 
 const ASSISTANT_CONFIG_PROPERTIES: Record<string, unknown> = {
   name: { type: 'string', description: 'Display name of the assistant (max 255 chars)' },
@@ -764,5 +884,12 @@ export async function setupFamulorServer(server: Server): Promise<void> {
 
   await registerAllTools(server);
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
+  const toolsWithAnnotations = TOOLS.map((t) => ({
+    ...t,
+    annotations: t.annotations ?? classify(t.name),
+  }));
+
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: toolsWithAnnotations,
+  }));
 }
