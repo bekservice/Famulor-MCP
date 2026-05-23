@@ -255,8 +255,10 @@ app.get('/authorize', (req, res) => {
     codeChallenge: q.code_challenge,
     codeChallengeMethod: q.code_challenge_method ?? 'S256',
     scope: q.scope ?? 'mcp',
+    resource: q.resource,
   });
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
   res.end(html);
 });
 
@@ -270,6 +272,7 @@ app.post('/authorize', async (req, res) => {
     code_challenge,
     code_challenge_method,
     scope,
+    resource,
   } = body;
 
   if (!api_key || !client_id || !redirect_uri || !code_challenge) {
@@ -282,6 +285,7 @@ app.post('/authorize', async (req, res) => {
         codeChallenge: code_challenge ?? '',
         codeChallengeMethod: code_challenge_method ?? 'S256',
         scope: scope ?? 'mcp',
+        resource,
         error: 'Missing required fields. Please reload the page from your MCP client.',
       })
     );
@@ -341,6 +345,7 @@ app.post('/authorize', async (req, res) => {
           codeChallenge: code_challenge,
           codeChallengeMethod: code_challenge_method ?? 'S256',
           scope: scope ?? 'mcp',
+          resource,
           error: `Could not verify API key: ${msg}`,
         })
       );

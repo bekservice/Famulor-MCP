@@ -12,6 +12,8 @@ export function renderAuthorizePage(params: {
   codeChallenge: string;
   codeChallengeMethod: string;
   scope: string;
+  /** ChatGPT appends `resource=<mcp-url>` to /authorize — must be echoed to /token */
+  resource?: string;
   error?: string;
 }): string {
   const esc = (s: string) =>
@@ -169,6 +171,7 @@ export function renderAuthorizePage(params: {
     <input type="hidden" name="code_challenge" value="${esc(params.codeChallenge)}" />
     <input type="hidden" name="code_challenge_method" value="${esc(params.codeChallengeMethod)}" />
     <input type="hidden" name="scope" value="${esc(params.scope)}" />
+    ${params.resource ? `<input type="hidden" name="resource" value="${esc(params.resource)}" />` : ''}
 
     <button type="submit">Authorize</button>
 
