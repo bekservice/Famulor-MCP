@@ -275,6 +275,93 @@ const IDEMPOTENT_WRITES = new Set<string>([
   'disable_conversation_ai',
 ]);
 
+/**
+ * Human-readable titles shown in client UIs (required by the Claude /
+ * MCP directory review: every tool must carry a `title` annotation).
+ */
+const TITLES: Record<string, string> = {
+  // user
+  get_me: 'Get account profile',
+  // assistants: read
+  get_assistants: 'List assistants',
+  get_outbound_assistants: 'List outbound assistants',
+  get_phone_numbers: 'List attachable phone numbers',
+  get_models: 'List models',
+  get_voices: 'List voices',
+  get_languages: 'List languages',
+  get_synthesizer_providers: 'List TTS providers',
+  get_transcriber_providers: 'List STT providers',
+  // assistants: write
+  create_assistant: 'Create assistant',
+  update_assistant: 'Update assistant',
+  delete_assistant: 'Delete assistant',
+  enable_assistant_inbound_webhook: 'Enable inbound webhook',
+  disable_assistant_inbound_webhook: 'Disable inbound webhook',
+  enable_assistant_conversation_ended_webhook: 'Enable conversation-ended webhook',
+  disable_assistant_conversation_ended_webhook: 'Disable conversation-ended webhook',
+  disable_assistant_webhook: 'Disable post-call webhook',
+  // calls
+  make_call: 'Make outbound call',
+  get_call: 'Get call',
+  list_calls: 'List calls',
+  delete_call: 'Delete call',
+  // conversations
+  list_conversations: 'List conversations',
+  get_conversation: 'Get conversation',
+  create_conversation: 'Start conversation',
+  send_message: 'Send chat message',
+  enable_conversation_ai: 'Enable AI replies',
+  disable_conversation_ai: 'Disable AI replies',
+  // campaigns
+  list_campaigns: 'List campaigns',
+  create_campaign: 'Create campaign',
+  update_campaign_status: 'Start or stop campaign',
+  delete_campaign: 'Delete campaign',
+  // leads
+  list_leads: 'List leads',
+  create_lead: 'Create lead',
+  update_lead: 'Update lead',
+  delete_lead: 'Delete lead',
+  // sms
+  send_sms: 'Send SMS',
+  // mid-call tools
+  list_mid_call_tools: 'List mid-call tools',
+  get_mid_call_tool: 'Get mid-call tool',
+  create_mid_call_tool: 'Create mid-call tool',
+  update_mid_call_tool: 'Update mid-call tool',
+  delete_mid_call_tool: 'Delete mid-call tool',
+  // knowledgebases
+  list_knowledgebases: 'List knowledge bases',
+  get_knowledgebase: 'Get knowledge base',
+  create_knowledgebase: 'Create knowledge base',
+  update_knowledgebase: 'Update knowledge base',
+  delete_knowledgebase: 'Delete knowledge base',
+  list_documents: 'List documents',
+  get_document: 'Get document',
+  create_document: 'Add document',
+  update_document: 'Update document',
+  delete_document: 'Delete document',
+  // phone numbers
+  list_all_phone_numbers: 'List all phone numbers',
+  search_phone_numbers: 'Search phone numbers',
+  purchase_phone_number: 'Purchase phone number',
+  release_phone_number: 'Release phone number',
+  // sip trunks
+  list_sip_trunks: 'List SIP trunks',
+  get_sip_trunk: 'Get SIP trunk',
+  create_sip_trunk: 'Create SIP trunk',
+  update_sip_trunk: 'Update SIP trunk',
+  delete_sip_trunk: 'Delete SIP trunk',
+  // whatsapp
+  get_whatsapp_senders: 'List WhatsApp senders',
+  get_whatsapp_templates: 'List WhatsApp templates',
+  get_whatsapp_session_status: 'Check WhatsApp session',
+  send_whatsapp_template: 'Send WhatsApp template',
+  send_whatsapp_freeform: 'Send WhatsApp message',
+  // ai replies
+  generate_ai_reply: 'Generate AI reply',
+};
+
 function classify(name: string): ToolAnnotations {
   if (DESTRUCTIVE_TOOLS.has(name)) {
     return {
@@ -1039,11 +1126,14 @@ export async function setupFamulorServer(server: Server): Promise<void> {
 
   await registerAllTools(server);
 
-  const toolsWithAnnotations = TOOLS.map((t) => ({
-    ...t,
-    annotations: t.annotations ?? classify(t.name),
-    outputSchema: t.outputSchema ?? OUTPUT_SCHEMAS[t.name] ?? SCHEMA_SINGLE,
-  }));
+  const toolsWithAnnotations = TOOLS.map((t) => {
+    const annotations = t.annotations ?? classify(t.name);
+    return {
+      ...t,
+      annotations: { title: TITLES[t.name] ?? t.name, ...annotations },
+      outputSchema: t.outputSchema ?? OUTPUT_SCHEMAS[t.name] ?? SCHEMA_SINGLE,
+    };
+  });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: toolsWithAnnotations,
