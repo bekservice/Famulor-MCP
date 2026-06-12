@@ -1,11 +1,28 @@
 {
   "name": "famulor-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP Server for Famulor Voice Agent Platform - AI-powered phone calling and voice assistant management",
   "type": "module",
   "main": "dist/src/index.js",
+  "bin": {
+    "famulor-mcp": "dist/src/index.js"
+  },
+  "files": [
+    "dist/src",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bekservice/Famulor-MCP.git"
+  },
+  "homepage": "https://www.famulor.io/feature/mcp-connector",
+  "bugs": {
+    "url": "https://github.com/bekservice/Famulor-MCP/issues"
+  },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "vercel-build": "npm run build",
     "dev": "tsx watch src/index.ts",
     "dev:http": "tsx watch scripts/serve.ts",
@@ -21,7 +38,10 @@
     "ai-calling",
     "phone-automation",
     "chatgpt",
-    "voice-assistant"
+    "voice-assistant",
+    "openclaw",
+    "claude",
+    "cursor"
   ],
   "author": "bekservice",
   "license": "MIT",

@@ -161,6 +161,73 @@ Add the server first — authenticate via your [API key](https://app.famulor.de/
 </details>
 
 <details>
+<summary><b>OpenClaw</b></summary>
+
+```bash
+openclaw mcp add famulor --url https://mcp.famulor.io/mcp --transport streamable-http --auth oauth
+openclaw mcp login famulor
+```
+
+Or in `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "famulor": {
+        "url": "https://mcp.famulor.io/mcp",
+        "transport": "streamable-http",
+        "auth": "oauth"
+      }
+    }
+  }
+}
+```
+
+Tip: there is also a ready-made Famulor skill — `openclaw skills install famulor-skill`.
+</details>
+
+<details>
+<summary><b>Hermes Agent</b></summary>
+
+```bash
+hermes mcp add famulor --url https://mcp.famulor.io/mcp
+hermes mcp login famulor
+```
+
+Or in `~/.hermes/config.yaml`:
+
+```yaml
+mcp_servers:
+  famulor:
+    url: "https://mcp.famulor.io/mcp"
+    auth: oauth
+```
+
+Apply in-session with `/reload-mcp`.
+</details>
+
+<details>
+<summary><b>npx (stdio, any MCP client)</b></summary>
+
+Run the server locally via npm — no hosted endpoint needed. Uses your
+[Famulor API key](https://app.famulor.de/api-keys) directly:
+
+```json
+{
+  "mcpServers": {
+    "famulor": {
+      "command": "npx",
+      "args": ["-y", "famulor-mcp"],
+      "env": { "FAMULOR_API_KEY": "your-api-key" }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
 <summary><b>Zed</b></summary>
 
 `~/.config/zed/settings.json`
