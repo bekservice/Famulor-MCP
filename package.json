@@ -1,6 +1,7 @@
 {
   "name": "famulor-mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
+  "mcpName": "io.famulor/famulor-mcp",
   "description": "MCP Server for Famulor Voice Agent Platform - AI-powered phone calling and voice assistant management",
   "type": "module",
   "main": "dist/src/index.js",
