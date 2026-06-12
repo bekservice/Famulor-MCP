@@ -1,5 +1,5 @@
 /**
- * Phone-number tools — list, search, purchase, release.
+ * Phone-number tools — list, search, purchase, update, release.
  */
 
 import { FamulorClient } from '../auth/famulor.js';
@@ -32,6 +32,15 @@ export async function handlePhoneNumberTools(
         const { phone_number } = args as { phone_number: string };
         const result = await client.post('/api/user/phone-numbers/purchase', {
           phone_number,
+        });
+        return textResult(result);
+      }
+
+      case 'update_phone_number': {
+        const { id, nickname } = args as { id: number; nickname?: string | null };
+        const result = await client.request(`/api/user/phone-numbers/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ nickname: nickname ?? null }),
         });
         return textResult(result);
       }

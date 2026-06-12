@@ -22,6 +22,8 @@ import { handleSipTrunkTools } from './sipTrunks.js';
 import { handleWhatsappTools } from './whatsapp.js';
 import { handleAiReplyTools } from './aiReplies.js';
 import { handleUserTools } from './user.js';
+import { handleFolderTools } from './folders.js';
+import { handleLabelTools } from './labels.js';
 
 const TOOL_GROUPS: Record<string, (name: string, args: unknown, client: FamulorClient) => Promise<unknown>> = {};
 
@@ -109,10 +111,15 @@ register(
     'list_all_phone_numbers',
     'search_phone_numbers',
     'purchase_phone_number',
+    'update_phone_number',
     'release_phone_number',
   ],
   handlePhoneNumberTools
 );
+
+register(['list_folders', 'create_folder', 'update_folder', 'delete_folder'], handleFolderTools);
+
+register(['list_labels', 'create_label', 'update_label', 'delete_label'], handleLabelTools);
 
 register(
   [

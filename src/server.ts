@@ -118,6 +118,8 @@ const OUTPUT_SCHEMAS: Record<string, JsonSchema> = {
   list_calls: SCHEMA_PAGINATED,
   list_leads: SCHEMA_PAGINATED,
   list_conversations: SCHEMA_PAGINATED,
+  list_folders: SCHEMA_PAGINATED,
+  list_labels: SCHEMA_PAGINATED,
 
   // bare arrays (wrapped under `result` by our text helper)
   get_languages: SCHEMA_LIST_WRAPPED,
@@ -180,7 +182,14 @@ const OUTPUT_SCHEMAS: Record<string, JsonSchema> = {
   update_document: SCHEMA_ACTION,
   delete_document: SCHEMA_ACTION,
   purchase_phone_number: SCHEMA_ACTION,
+  update_phone_number: SCHEMA_ACTION,
   release_phone_number: SCHEMA_ACTION,
+  create_folder: SCHEMA_ACTION,
+  update_folder: SCHEMA_ACTION,
+  delete_folder: SCHEMA_ACTION,
+  create_label: SCHEMA_ACTION,
+  update_label: SCHEMA_ACTION,
+  delete_label: SCHEMA_ACTION,
   create_sip_trunk: SCHEMA_ACTION,
   update_sip_trunk: SCHEMA_ACTION,
   delete_sip_trunk: SCHEMA_ACTION,
@@ -212,6 +221,8 @@ const DESTRUCTIVE_TOOLS = new Set<string>([
   'delete_document',
   'delete_sip_trunk',
   'release_phone_number',
+  'delete_folder',
+  'delete_label',
 ]);
 
 const WRITE_TOOLS = new Set<string>([
@@ -248,6 +259,12 @@ const WRITE_TOOLS = new Set<string>([
   'update_document',
   // phone numbers
   'purchase_phone_number',
+  'update_phone_number',
+  // folders & labels
+  'create_folder',
+  'update_folder',
+  'create_label',
+  'update_label',
   // sip trunks
   'create_sip_trunk',
   'update_sip_trunk',
@@ -266,6 +283,9 @@ const IDEMPOTENT_WRITES = new Set<string>([
   'update_knowledgebase',
   'update_document',
   'update_sip_trunk',
+  'update_phone_number',
+  'update_folder',
+  'update_label',
   'enable_assistant_inbound_webhook',
   'disable_assistant_inbound_webhook',
   'enable_assistant_conversation_ended_webhook',
@@ -345,7 +365,18 @@ const TITLES: Record<string, string> = {
   list_all_phone_numbers: 'List all phone numbers',
   search_phone_numbers: 'Search phone numbers',
   purchase_phone_number: 'Purchase phone number',
+  update_phone_number: 'Update phone number nickname',
   release_phone_number: 'Release phone number',
+  // folders
+  list_folders: 'List folders',
+  create_folder: 'Create folder',
+  update_folder: 'Update folder',
+  delete_folder: 'Delete folder',
+  // labels
+  list_labels: 'List labels',
+  create_label: 'Create label',
+  update_label: 'Update label',
+  delete_label: 'Delete label',
   // sip trunks
   list_sip_trunks: 'List SIP trunks',
   get_sip_trunk: 'Get SIP trunk',
@@ -455,6 +486,15 @@ const ASSISTANT_CONFIG_PROPERTIES: Record<string, unknown> = {
     },
   },
   variables: { type: 'object', additionalProperties: true },
+  folder_id: {
+    type: ['integer', 'null'],
+    description: 'Folder to place the assistant in (one folder per assistant). See list_folders. Send null to remove.',
+  },
+  label_ids: {
+    type: 'array',
+    items: { type: 'integer' },
+    description: 'Label IDs to tag the assistant with (an assistant can carry multiple labels). See list_labels.',
+  },
   conversation_inactivity_timeout: { type: 'integer' },
   conversation_ended_retrigger: { type: 'boolean' },
   conversation_ended_webhook_url: { type: 'string' },
@@ -982,8 +1022,117 @@ const TOOLS: ToolDef[] = [
     inputSchema: Schema({ phone_number: { type: 'string' } }, ['phone_number']),
   },
   {
+    name: 'update_phone_number',
+    description:
+      'Update a phone number you own. Currently sets the nickname — a short human-readable label (max 50 chars) shown next to the number. Send null/empty to clear it. Granted (shared) numbers cannot be updated.',
+    inputSchema: Schema(
+      {
+        id: { type: 'integer', description: 'Phone number ID to update' },
+        nickname: { type: ['string', 'null'], description: 'Short label, max 50 chars. null clears it.' },
+      },
+      ['id']
+    ),
+  },
+  {
     name: 'release_phone_number',
     description: 'Release (cancel) a purchased phone number.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+
+  // -- Folders
+  {
+    name: 'list_folders',
+    description:
+      'List assistant folders (paginated), each with its assistants_count. Folders group assistants, e.g. per customer or brand; an assistant belongs to at most one folder.',
+    inputSchema: Schema({
+      page: { type: 'integer' },
+      per_page: { type: 'integer', description: '1-100, default 15' },
+    }),
+  },
+  {
+    name: 'create_folder',
+    description:
+      'Create a folder to group assistants. Assign assistants via the folder_id field on create_assistant / update_assistant.',
+    inputSchema: Schema(
+      {
+        name: { type: 'string', description: 'Folder name (max 255 chars, unique per account)' },
+        color: {
+          type: 'string',
+          enum: ['gray', 'slate', 'red', 'orange', 'amber', 'green', 'teal', 'blue', 'purple', 'pink'],
+          description: 'Badge color',
+        },
+      },
+      ['name']
+    ),
+  },
+  {
+    name: 'update_folder',
+    description: 'Rename a folder or change its color (partial — only sent fields change).',
+    inputSchema: Schema(
+      {
+        id: { type: 'integer', description: 'Folder ID' },
+        name: { type: 'string', description: 'New name (max 255 chars, unique per account)' },
+        color: {
+          type: ['string', 'null'],
+          enum: ['gray', 'slate', 'red', 'orange', 'amber', 'green', 'teal', 'blue', 'purple', 'pink', null],
+          description: 'New badge color, or null to remove',
+        },
+      },
+      ['id']
+    ),
+  },
+  {
+    name: 'delete_folder',
+    description: 'Delete a folder. Assistants inside are NOT deleted — they just become uncategorized.',
+    inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
+  },
+
+  // -- Labels
+  {
+    name: 'list_labels',
+    description:
+      'List assistant labels (paginated), each with its assistants_count. Labels are tags; an assistant can carry multiple labels across folders.',
+    inputSchema: Schema({
+      page: { type: 'integer' },
+      per_page: { type: 'integer', description: '1-100, default 15' },
+    }),
+  },
+  {
+    name: 'create_label',
+    description:
+      'Create a label to tag assistants (e.g. "inbound", "outbound"). Assign via the label_ids field on create_assistant / update_assistant.',
+    inputSchema: Schema(
+      {
+        name: { type: 'string', description: 'Label name (max 255 chars, unique per account)' },
+        color: {
+          type: 'string',
+          enum: ['gray', 'slate', 'red', 'orange', 'amber', 'green', 'teal', 'blue', 'purple', 'pink'],
+          description: 'Badge color',
+        },
+      },
+      ['name']
+    ),
+  },
+  {
+    name: 'update_label',
+    description: 'Rename a label or change its color (partial — only sent fields change).',
+    inputSchema: Schema(
+      {
+        id: { type: 'integer', description: 'Label ID' },
+        name: { type: 'string', description: 'New name (max 255 chars, unique per account)' },
+        color: {
+          type: ['string', 'null'],
+          enum: ['gray', 'slate', 'red', 'orange', 'amber', 'green', 'teal', 'blue', 'purple', 'pink', null],
+          description: 'New badge color, or null to remove',
+        },
+      },
+      ['id']
+    ),
+  },
+  {
+    name: 'delete_label',
+    description:
+      'Delete a label. It is removed from all assistants it was assigned to — the assistants themselves are NOT affected.',
     inputSchema: Schema({ id: { type: 'integer' } }, ['id']),
   },
 
