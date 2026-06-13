@@ -1,0 +1,22 @@
+# PR-Datei für: github.com/NousResearch/hermes-agent
+# Zielpfad im PR: optional-mcps/famulor/manifest.yaml
+# WICHTIG: Vor dem PR Format an 2-3 bestehenden Manifesten in optional-mcps/ ausrichten!
+
+manifest_version: 1
+name: famulor
+display_name: Famulor
+description: >
+  AI voice agent platform. Create phone assistants, make calls, run outbound
+  campaigns, manage leads, knowledge bases (RAG), WhatsApp, SMS and SIP trunks.
+source: https://github.com/bekservice/Famulor-MCP
+homepage: https://www.famulor.io
+transport:
+  url: https://mcp.famulor.io/mcp
+  auth: oauth
+# Alternative (stdio via npm):
+# transport:
+#   command: npx
+#   args: ["-y", "famulor-mcp"]
+# credentials:
+#   - env: FAMULOR_API_KEY
+#     prompt: "Famulor API key (create at https://app.famulor.de → API Keys)"

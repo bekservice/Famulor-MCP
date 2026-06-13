@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.famulor/famulor-mcp",
   "title": "Famulor",
-  "description": "AI voice agent platform: assistants, calls, campaigns, leads, knowledge bases, WhatsApp, SMS and SIP trunks — 66 tools over the full Famulor API.",
+  "description": "AI voice agents: assistants, calls, campaigns, leads, knowledge bases, WhatsApp, SMS & SIP trunks.",
   "repository": {
     "url": "https://github.com/bekservice/Famulor-MCP",
     "source": "github"

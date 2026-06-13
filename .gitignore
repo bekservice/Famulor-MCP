@@ -17,8 +17,13 @@ api/*.d.ts.map
 .env.local
 .env.*.local
 
-# MCP configuration (may contain API keys)
-mcp.json
+# Registry signing key — NEVER commit
+mcp-registry-key.pem
+*.pem
+
+# Archives
+Archiv.zip
+*.zip
 
 # IDE
 .vscode/

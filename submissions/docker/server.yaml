@@ -1,0 +1,31 @@
+# PR-Datei für: github.com/docker/mcp-registry
+# Zielpfad im PR: servers/famulor/server.yaml
+# Empfohlen: stattdessen `task remote-wizard` im Fork laufen lassen — der Wizard
+# erzeugt das exakte aktuelle Format. Diese Datei ist die inhaltliche Vorlage.
+
+name: famulor
+image: mcp/famulor
+type: remote
+meta:
+  category: communication
+  tags:
+    - voice
+    - telephony
+    - whatsapp
+    - sms
+    - crm
+about:
+  title: Famulor
+  description: AI voice agents — assistants, calls, campaigns, leads, knowledge bases, WhatsApp, SMS & SIP trunks.
+  icon: https://mcp.famulor.io/logo.png
+source:
+  project: https://github.com/bekservice/Famulor-MCP
+remote:
+  transport_type: streamable-http
+  url: https://mcp.famulor.io/mcp
+oauth:
+  - provider: famulor
+    secret: famulor.access_token
+    env: ''
+dynamic:
+  tools: true

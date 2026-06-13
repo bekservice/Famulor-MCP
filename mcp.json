@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "famulor": {
+      "type": "http",
+      "url": "https://mcp.famulor.io/mcp"
+    }
+  }
+}

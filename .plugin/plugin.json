@@ -1,0 +1,25 @@
+{
+  "$schema": "https://open-plugins.com/schema/plugin.schema.json",
+  "name": "famulor-mcp",
+  "version": "0.3.1",
+  "description": "Famulor MCP server — AI voice agents: assistants, calls, campaigns, leads, knowledge bases, WhatsApp, SMS & SIP trunks (75 tools).",
+  "author": {
+    "name": "bekservice",
+    "email": "info@bekservice.de",
+    "url": "https://www.bekservice.de"
+  },
+  "homepage": "https://www.famulor.io/feature/mcp-connector",
+  "repository": "https://github.com/bekservice/Famulor-MCP",
+  "license": "MIT",
+  "keywords": [
+    "famulor",
+    "mcp",
+    "model-context-protocol",
+    "voice-agent",
+    "ai-calling",
+    "phone-automation",
+    "whatsapp",
+    "sms"
+  ],
+  "mcp": "./mcp.json"
+}
