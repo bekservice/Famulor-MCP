@@ -2,7 +2,7 @@
 
 ## Smithery (https://smithery.ai/new)
 
-- Server URL: `https://mcp.famulor.io/mcp`
+- Server URL: `https://app.famulor.io/mcp`
 - Namespace-Vorschlag: `@bekservice/famulor-mcp`
 - Hinweis: Server liefert bei unauthentifizierten Requests 401 (nicht 403) — Voraussetzung für den SmitheryBot-Scan. Falls der Scan scheitert: prüfen!
 - Danach: Settings → Verification für den Official-Vendor-Badge.
@@ -18,7 +18,7 @@
 - URL: https://github.com/bekservice/Famulor-MCP
 - Server Config:
   ```json
-  { "mcpServers": { "famulor": { "type": "http", "url": "https://mcp.famulor.io/mcp" } } }
+  { "mcpServers": { "famulor": { "type": "http", "url": "https://app.famulor.io/mcp" } } }
   ```
 
 ## PulseMCP (https://www.pulsemcp.com/submit)
@@ -43,11 +43,10 @@ Subject: MCP Registry listing request — Famulor (io.famulor/famulor-mcp)
 >
 > we'd like to nominate the Famulor MCP server for the GitHub MCP Registry (github.com/mcp).
 >
-> Famulor is an AI voice agent platform (GDPR-compliant, EU-hosted). The MCP server exposes 75 tools covering the full platform API — voice assistants, calls, campaigns, leads, knowledge bases (RAG), WhatsApp, SMS and SIP trunks.
+> Famulor is an AI agent platform. Its MCP server exposes the current public platform catalog for assistants, cross-channel history, calls, campaigns, contacts, knowledge, messaging, automations, dashboards, and workspace settings.
 >
 > - Official registry entry: io.famulor/famulor-mcp (registry.modelcontextprotocol.io)
-> - Remote endpoint: https://mcp.famulor.io/mcp (streamable HTTP, OAuth 2.1 + PKCE)
-> - npm: https://www.npmjs.com/package/famulor-mcp
+> - Remote endpoint: https://app.famulor.io/mcp (streamable HTTP, OAuth 2.1 + PKCE)
 > - Source: https://github.com/bekservice/Famulor-MCP
 > - Docs: https://docs.famulor.io
 >

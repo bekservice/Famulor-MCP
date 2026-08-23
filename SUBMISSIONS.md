@@ -2,17 +2,22 @@
 
 Status legend: ☐ open · ☑ done. Alle Befehle aus dem Repo-Root (`~/dev/Famulor-MCP`).
 
-## 0. Voraussetzung: npm-Republish (mcpName)
+## 0. Current production source
 
-`package.json` enthält jetzt `"mcpName": "io.famulor/famulor-mcp"` (Ownership-Nachweis für die offizielle Registry):
+The canonical full-catalog server is the native Famulor endpoint:
 
 ```bash
-npm publish --access public   # publisht 0.3.1
+https://app.famulor.io/mcp
 ```
+
+The npm package and `https://mcp.famulor.io/mcp` remain available only for
+legacy clients. New directory submissions must use the canonical endpoint.
 
 ## 1. Offizielle MCP Registry (registry.modelcontextprotocol.io)
 
-`server.json` liegt im Repo-Root. Namespace `io.famulor` per DNS-Verifikation:
+`server.json` liegt im Repo-Root. Der bestehende Namespace `io.famulor` wird
+per DNS-Verifikation aktualisiert. Der Eintrag ist remote-only; ein npm
+Republish ist nicht erforderlich:
 
 ```bash
 brew install mcp-publisher
@@ -41,8 +46,8 @@ Eskalation: mcp-directory@anthropic.com
 
 ## 3. Smithery (smithery.ai)
 
-Remote-Server eintragen: https://smithery.ai/new → `https://mcp.famulor.io/mcp`
-Oder CLI: `smithery mcp publish "https://mcp.famulor.io/mcp" -n @bekservice/famulor-mcp`
+Remote-Server eintragen: https://smithery.ai/new → `https://app.famulor.io/mcp`
+Oder CLI: `smithery mcp publish "https://app.famulor.io/mcp" -n @bekservice/famulor-mcp`
 Wichtig: Server muss bei unauthentifizierten Requests **401 (nicht 403)** liefern. Danach Settings → Verification für den Vendor-Badge.
 
 ## 4. Glama (glama.ai)
@@ -78,7 +83,7 @@ PR an https://github.com/NousResearch/hermes-agent — neue Datei `optional-mcps
 manifest_version: 1
 source: https://github.com/bekservice/Famulor-MCP
 transport:
-  url: https://mcp.famulor.io/mcp
+  url: https://app.famulor.io/mcp
   auth: oauth
 ```
 
@@ -103,4 +108,6 @@ Kuratiert. Nach Schritt 1: Nominierung per Mail an partnerships@github.com.
 
 ## Empfohlene Reihenfolge
 
-1. npm republish (0.3.1 mit mcpName) → 2. Offizielle Registry → 3. Claude Directory → 4. Smithery → 5. glama.json pushen → 6. Docker PR → 7. Cline Issue → 8. cursor.directory → 9. Formulare → 10. Hermes PR → 11. GitHub partnerships Mail
+1. Offizielle Registry aktualisieren → 2. Claude Directory → 3. Smithery →
+4. Glama → 5. Docker PR → 6. Cline Issue → 7. cursor.directory →
+8. Formulare → 9. Hermes PR → 10. GitHub partnerships Mail

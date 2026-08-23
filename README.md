@@ -1,18 +1,17 @@
 <p align="center">
-  <img src="https://mcp.famulor.io/logo.png" alt="Famulor" width="80" height="80" />
+  <img src="https://app.famulor.io/famulor-mcp-logo.svg" alt="Famulor" width="80" height="80" />
 </p>
 
 <h1 align="center">Famulor MCP</h1>
 
 <p align="center">
-  Control your Famulor AI voice agents — calls, leads, campaigns, knowledge bases,
-  conversations, WhatsApp, SIP trunks — directly from Claude, Cursor, Windsurf, VS Code
-  and any other MCP-compatible client.
+  Connect Claude, Codex, Cursor, VS Code, and other MCP clients to the complete
+  tenant-safe Famulor platform API.
 </p>
 
 <p align="center">
-  <a href="https://mcp.famulor.io">mcp.famulor.io</a> ·
-  <a href="https://app.famulor.de/api-keys">Get an API key</a> ·
+  <a href="https://app.famulor.io/mcp">MCP endpoint</a> ·
+  <a href="https://app.famulor.io/settings?panel=apikeys">API &amp; MCP settings</a> ·
   <a href="https://docs.famulor.io">Docs</a>
 </p>
 
@@ -42,21 +41,21 @@
 
 ## Setup
 
-Add the server in your editor, then sign in with your
-[Famulor API key](https://app.famulor.de/api-keys) when prompted in the browser.
+Add the server in your client, then sign in to Famulor and approve the requested
+workspace permissions in the browser. Claude and ChatGPT use OAuth; there is no
+API key to paste into their connector settings.
 
-> **Server URL**: `https://mcp.famulor.io/mcp` is the canonical endpoint.
-> Both `https://mcp.famulor.io/` and `https://mcp.famulor.io/mcp` work as MCP
-> URLs, so you can paste either into your client's connector dialog.
+> **Server URL**: `https://app.famulor.io/mcp` is the canonical endpoint.
+> `https://mcp.famulor.io/mcp` remains online only for legacy clients.
 
 <details open>
 <summary><b>Claude Code</b></summary>
 
 ```bash
-claude mcp add --transport http famulor https://mcp.famulor.io/mcp
+claude mcp add --transport http famulor https://app.famulor.io/mcp
 ```
 
-Add the server first — authenticate via your [API key](https://app.famulor.de/api-keys) when prompted.
+Add the server first, then complete the browser-based OAuth flow.
 </details>
 
 <details>
@@ -65,7 +64,7 @@ Add the server first — authenticate via your [API key](https://app.famulor.de/
 **Settings > Connectors > Add custom connector**
 
 ```
-https://mcp.famulor.io/mcp
+https://app.famulor.io/mcp
 ```
 
 Copy the URL, paste it into the connector dialog, and sign in when prompted.
@@ -81,13 +80,13 @@ Copy the URL, paste it into the connector dialog, and sign in when prompted.
   "mcpServers": {
     "famulor": {
       "type": "http",
-      "url": "https://mcp.famulor.io/mcp"
+      "url": "https://app.famulor.io/mcp"
     }
   }
 }
 ```
 
-Add the server first — authenticate via your [API key](https://app.famulor.de/api-keys) when prompted.
+Add the server first, then complete the browser-based OAuth flow.
 </details>
 
 <details>
@@ -99,13 +98,13 @@ Add the server first — authenticate via your [API key](https://app.famulor.de/
 {
   "mcpServers": {
     "famulor": {
-      "serverUrl": "https://mcp.famulor.io/mcp"
+      "serverUrl": "https://app.famulor.io/mcp"
     }
   }
 }
 ```
 
-Add the server first — authenticate via your [API key](https://app.famulor.de/api-keys) when prompted.
+Add the server first, then complete the browser-based OAuth flow.
 </details>
 
 <details>
@@ -118,13 +117,13 @@ Add the server first — authenticate via your [API key](https://app.famulor.de/
   "servers": {
     "famulor": {
       "type": "http",
-      "url": "https://mcp.famulor.io/mcp"
+      "url": "https://app.famulor.io/mcp"
     }
   }
 }
 ```
 
-Add the server first — authenticate via your [API key](https://app.famulor.de/api-keys) when prompted.
+Add the server first, then complete the browser-based OAuth flow.
 </details>
 
 <details>
@@ -136,13 +135,13 @@ Add the server first — authenticate via your [API key](https://app.famulor.de/
 {
   "mcpServers": {
     "famulor": {
-      "url": "https://mcp.famulor.io/mcp"
+      "url": "https://app.famulor.io/mcp"
     }
   }
 }
 ```
 
-Add the server first — authenticate via your [API key](https://app.famulor.de/api-keys) when prompted.
+Add the server first, then complete the browser-based OAuth flow.
 </details>
 
 <details>
@@ -154,17 +153,17 @@ Add the server first — authenticate via your [API key](https://app.famulor.de/
 mcpServers:
   - name: famulor
     type: streamable-http
-    url: "https://mcp.famulor.io/mcp"
+    url: "https://app.famulor.io/mcp"
 ```
 
-Add the server first — authenticate via your [API key](https://app.famulor.de/api-keys) when prompted.
+Add the server first, then complete the browser-based OAuth flow.
 </details>
 
 <details>
 <summary><b>OpenClaw</b></summary>
 
 ```bash
-openclaw mcp add famulor --url https://mcp.famulor.io/mcp --transport streamable-http --auth oauth
+openclaw mcp add famulor --url https://app.famulor.io/mcp --transport streamable-http --auth oauth
 openclaw mcp login famulor
 ```
 
@@ -175,7 +174,7 @@ Or in `~/.openclaw/openclaw.json`:
   "mcp": {
     "servers": {
       "famulor": {
-        "url": "https://mcp.famulor.io/mcp",
+        "url": "https://app.famulor.io/mcp",
         "transport": "streamable-http",
         "auth": "oauth"
       }
@@ -191,7 +190,7 @@ Tip: there is also a ready-made Famulor skill — `openclaw skills install famul
 <summary><b>Hermes Agent</b></summary>
 
 ```bash
-hermes mcp add famulor --url https://mcp.famulor.io/mcp
+hermes mcp add famulor --url https://app.famulor.io/mcp
 hermes mcp login famulor
 ```
 
@@ -200,7 +199,7 @@ Or in `~/.hermes/config.yaml`:
 ```yaml
 mcp_servers:
   famulor:
-    url: "https://mcp.famulor.io/mcp"
+    url: "https://app.famulor.io/mcp"
     auth: oauth
 ```
 
@@ -208,10 +207,11 @@ Apply in-session with `/reload-mcp`.
 </details>
 
 <details>
-<summary><b>npx (stdio, any MCP client)</b></summary>
+<summary><b>Legacy npx/stdio package</b></summary>
 
-Run the server locally via npm — no hosted endpoint needed. Uses your
-[Famulor API key](https://app.famulor.de/api-keys) directly:
+The earlier npm package is retained for compatibility, but it does not expose
+the current platform's complete tool catalog. New integrations should use the
+hosted OAuth endpoint above. Existing stdio users can continue with an API key:
 
 ```json
 {
@@ -239,7 +239,7 @@ Run the server locally via npm — no hosted endpoint needed. Uses your
       "args": [
         "-y",
         "mcp-remote@latest",
-        "https://mcp.famulor.io/mcp"
+        "https://app.famulor.io/mcp"
       ],
       "command": "npx"
     }
@@ -247,37 +247,35 @@ Run the server locally via npm — no hosted endpoint needed. Uses your
 }
 ```
 
-Add the server first — authenticate via your [API key](https://app.famulor.de/api-keys) when prompted.
+Add the server first, then complete the browser-based OAuth flow.
 </details>
 
 ---
 
 ## What you can do
 
-Once connected, your AI assistant can call any of the **66 tools** spanning the full
-Famulor API. A non-exhaustive tour:
+Once connected, your AI assistant discovers the current public tool catalog
+directly from Famulor. The catalog covers, among other areas:
 
 **Assistants** — create, update, delete AI voice agents · list voices, languages, LLM/multimodal models, TTS/STT providers · toggle inbound and conversation-ended webhooks
 
-**Calls** — make outbound calls · list / get / delete call records
+**History & calls** — inspect cross-channel history and transcripts · make and manage calls
 
 **Campaigns** — create campaigns, manage retry rules and allowed-hours windows · start, stop and delete
 
-**Leads** — add leads (incl. secondary contacts) · update status and merge variables · delete
+**Audience** — manage contacts, tags, segments, suppression and campaign membership
 
 **Knowledge bases** — create knowledge bases · upload website-scraped documents · update / delete
 
-**Phone numbers** — search by country and dial pattern · purchase · release · SIP trunk CRUD
+**Telephony** — phone numbers, number verification, assignments and SIP trunks
 
-**Conversations** — list, read and reply to chat conversations · enable/disable AI per conversation for human takeover
+**Messaging & email** — WhatsApp, Instagram, Messenger, Telegram, Slack, Teams,
+Discord, Google Chat, X, helpdesk and email conversation workflows
 
 **WhatsApp** — list senders and templates · check 24h session window · send template or freeform messages
 
-**SMS** — send via your purchased numbers
-
-**Mid-call tools** — register custom HTTP integrations the assistant can call mid-conversation
-
-**AI Replies** — generate context-aware replies for external chat platforms
+**Automations & operations** — flows, routines, dashboards, integrations,
+webhooks, booking, workspace settings and account administration
 
 Ask the assistant in plain English, e.g. *"Create a German sales assistant using GPT-4.1-mini and the Susi voice"*, *"Start campaign #42 and add these 50 leads"*, *"Show me all calls today where the goal wasn't reached."*
 
@@ -285,20 +283,19 @@ Ask the assistant in plain English, e.g. *"Create a German sales assistant using
 
 ## How auth works
 
-The server speaks the standard MCP OAuth 2.1 flow (RFC 8414 metadata, RFC 7591
-Dynamic Client Registration, PKCE S256). Your MCP client opens a browser tab,
-you paste your Famulor API key, and the client receives an access token that
-the server encrypts with AES-256-GCM. **Your API key never lands in any
-database** — it lives only inside the token your client stores.
-
-Tokens expire after 30 days; your client simply re-prompts.
+The canonical endpoint implements MCP OAuth discovery, authorization code with
+PKCE, dynamic client registration and Client ID Metadata Documents. Your MCP
+client opens Famulor in a browser, where you sign in, choose a workspace and
+approve the requested scopes. API keys are also accepted for server-to-server
+clients, but are not the Claude or ChatGPT connector path.
 
 ---
 
 ## Self-hosting
 
-The hosted server at `https://mcp.famulor.io` works out of the box, but you can
-run your own if you prefer.
+The canonical full-catalog server is part of the Famulor application and is not
+implemented by this legacy standalone package. The code in this repository is
+retained for existing self-hosted and npm users.
 
 ### Deploy to Vercel
 
