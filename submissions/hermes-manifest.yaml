@@ -11,7 +11,7 @@ description: >
 source: https://github.com/bekservice/Famulor-MCP
 homepage: https://www.famulor.io
 transport:
-  url: https://mcp.famulor.io/mcp
+  url: https://app.famulor.io/mcp
   auth: oauth
 # Alternative (stdio via npm):
 # transport:
@@ -19,4 +19,4 @@ transport:
 #   args: ["-y", "famulor-mcp"]
 # credentials:
 #   - env: FAMULOR_API_KEY
-#     prompt: "Famulor API key (create at https://app.famulor.de → API Keys)"
+#     prompt: "Famulor API key (create at https://app.famulor.io → API Keys)"

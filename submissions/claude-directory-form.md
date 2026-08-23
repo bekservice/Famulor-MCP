@@ -9,30 +9,33 @@ Formular: https://clau.de/mcp-directory-submission
 | Connector name | Famulor |
 | Company / Developer | BEK Service GmbH, Kempten, Germany |
 | Contact email | info@bekservice.de |
-| MCP Server URL | https://mcp.famulor.io/mcp |
+| MCP Server URL | https://app.famulor.io/mcp |
 | Website | https://www.famulor.io |
 | Documentation | https://docs.famulor.io |
 | Setup guide | https://www.famulor.io/feature/mcp-connector |
-| Logo | https://mcp.famulor.io/logo.png (+ submissions/famulor-logo-400.png) |
+| Logo | https://app.famulor.io/famulor-mcp-logo.svg (+ submissions/famulor-logo-400.png) |
 | Privacy Policy | https://www.famulor.io/privacy |
 | Terms of Service | https://www.famulor.io/terms |
 | DPA | https://www.famulor.io/dpa |
 
 ## Beschreibung (kurz)
 
-AI voice agent platform. Create phone assistants, make calls, run outbound campaigns, manage leads, knowledge bases (RAG), WhatsApp, SMS and SIP trunks — 75 tools covering the full Famulor API. GDPR-compliant, EU data processing.
+AI agent platform with a full public MCP catalog for assistants, cross-channel
+history, calls, campaigns, contacts, knowledge, messaging, automations,
+dashboards, and workspace settings.
 
 ## Technik-Checkliste (Anforderungen erfüllt?)
 
 - [x] OAuth 2.1 + PKCE (RFC 8414 metadata, RFC 7591 DCR) — `/.well-known/oauth-authorization-server`
 - [x] HTTPS / streamable HTTP
-- [x] Tool annotations: alle 75 Tools mit `title` + `readOnlyHint`/`destructiveHint`
+- [x] Tool annotations: all discovered tools publish explicit annotations
 - [x] Öffentliche Doku live
-- [ ] **Test-Account für Reviewer** — anlegen und Zugangsdaten + Schritt-für-Schritt-Anleitung bereitstellen:
-      1. Login auf app.famulor.de mit Test-Credentials
-      2. API Keys → Key kopieren
-      3. Im OAuth-Flow des Connectors einfügen
-- [ ] Data-Handling-Angaben: API-Key wird nie gespeichert (AES-256-GCM-verschlüsselt im Client-Token), Token-Laufzeit 30 Tage, Verarbeitung in der EU (Vercel), keine Weitergabe an Dritte
+- [x] Dedicated reviewer account is available; provide its credentials only in
+      the private submission form
+- [x] OAuth reviewer flow: sign in, choose the isolated review workspace, and
+      approve the requested scopes; no API key is pasted into Claude
+- [ ] Confirm the current data-handling answers against the public Privacy
+      Policy and DPA immediately before submission
 
 ## Beispiel-Prompts (für das Formular)
 

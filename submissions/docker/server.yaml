@@ -17,12 +17,12 @@ meta:
 about:
   title: Famulor
   description: AI voice agents — assistants, calls, campaigns, leads, knowledge bases, WhatsApp, SMS & SIP trunks.
-  icon: https://mcp.famulor.io/logo.png
+  icon: https://raw.githubusercontent.com/bekservice/Famulor-MCP/main/submissions/famulor-logo-400.png
 source:
   project: https://github.com/bekservice/Famulor-MCP
 remote:
   transport_type: streamable-http
-  url: https://mcp.famulor.io/mcp
+  url: https://app.famulor.io/mcp
 oauth:
   - provider: famulor
     secret: famulor.access_token
