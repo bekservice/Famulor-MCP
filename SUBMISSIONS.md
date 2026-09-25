@@ -10,8 +10,11 @@ The canonical full-catalog server is the native Famulor endpoint:
 https://app.famulor.io/mcp
 ```
 
-The npm package and `https://mcp.famulor.io/mcp` remain available only for
-legacy clients. New directory submissions must use the canonical endpoint.
+The earlier self-hosted server (`mcp.famulor.io`) and the npm package
+`famulor-mcp` are retired. All directory submissions use the canonical
+endpoint. Store reviews that need a fixed read-only tool set use
+`https://app.famulor.io/mcp?profile=assistant-history` (11 read-only tools,
+scopes `assistants:read` + `calls:read`).
 
 ## 1. Offizielle MCP Registry (registry.modelcontextprotocol.io)
 
@@ -33,16 +36,23 @@ mcp-publisher publish
 curl https://registry.modelcontextprotocol.io/servers/io.famulor/famulor-mcp
 ```
 
-Einfachere Alternative ohne DNS: Namespace `io.github.bekservice/famulor-mcp` + `mcp-publisher login github` (dann `name` in server.json und `mcpName` in package.json entsprechend ändern).
+Einfachere Alternative ohne DNS: Namespace `io.github.bekservice/famulor-mcp` + `mcp-publisher login github` (dann `name` in server.json entsprechend ändern).
 
 ## 2. Anthropic Claude Connectors Directory
 
 Formular: https://clau.de/mcp-directory-submission
 Anforderungen: OAuth 2.0 ✓, HTTPS ✓, öffentliche Docs ✓. Noch nötig:
 - **Test-Account** mit Schritt-für-Schritt-Setup für Reviewer
-- **Tool-Annotations**: jedes Tool braucht `title` + `readOnlyHint`/`destructiveHint` (größter Aufwand, ~66 Tools)
+- **Tool-Annotations** ✓ (liefert der Plattform-Endpoint für jedes Tool)
 - Logo/Favicon, Data-Handling-Angaben
 Eskalation: mcp-directory@anthropic.com
+
+## 2b. ChatGPT Apps (OpenAI)
+
+`chatgpt-app-submission.json` entspricht der Datei im Plattform-Repo
+(Famulor-Multi-Tenancy). MCP Server URL im Formular:
+`https://app.famulor.io/mcp?profile=assistant-history` (11 Read-only-Tools),
+Authentication: **OAuth → Client ID Metadata Document**.
 
 ## 3. Smithery (smithery.ai)
 
