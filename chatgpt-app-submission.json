@@ -1,89 +1,168 @@
 {
-  "$schema": "https://platform.openai.com/schemas/chatgpt-app-submission.v1.json",
-  "app_name": "Famulor",
-  "subtitle": "Manage AI voice agents & calls",
-  "description": "Famulor connects your AI voice agents to ChatGPT. Create and update assistants, search and purchase phone numbers, run outbound campaigns, manage leads and knowledge bases, send SMS or WhatsApp, and review call transcripts and recordings — all by chatting with ChatGPT.\n\nBring your own Famulor account. Sign in with your API key once and ChatGPT can:\n• Create AI phone assistants and configure their voice, language, and behavior\n• Make outbound calls and review call transcripts and recordings\n• Run and pause outbound campaigns, add leads with custom variables\n• Build knowledge bases from URLs your assistant can answer from\n• Send WhatsApp template or freeform messages, and SMS\n• Hand a conversation off between AI and a human agent\n\nBest for support teams, sales operations, AI agencies, and anyone running an AI receptionist, appointment booker, or outbound caller on Famulor.\n\nFamulor is operated by BEK Service GmbH in Germany. Data is processed and stored on EU servers and the platform is fully GDPR (DSGVO) compliant.",
-  "category": "Productivity",
-  "developer": {
-    "name": "BEK Service GmbH",
-    "legal_entity": "BEK Service GmbH",
-    "address": "Westendstr. 2A, 87439 Kempten (Allgäu), Germany",
-    "country": "DE"
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "Famulor",
+    "subtitle": "Assistants & history",
+    "description": "Famulor lets users inspect existing AI assistant configurations, saved versions, available models, languages, voices, and past conversation history in their authenticated workspace. This read-only directory profile cannot create or change assistants, start calls, send messages, launch campaigns, purchase phone numbers, or open billing flows.",
+    "category": "BUSINESS"
   },
-  "website_url": "https://www.famulor.io",
-  "support": {
-    "email": "support@famulor.io",
-    "url": "https://www.famulor.io"
-  },
-  "legal": {
-    "privacy_policy_url": "https://www.famulor.io/privacy",
-    "terms_of_service_url": "https://www.famulor.io/terms",
-    "data_processing_agreement_url": "https://www.famulor.io/dpa"
-  },
-  "demo_recording_url": "REPLACE_WITH_UPLOADED_DEMO_VIDEO_URL",
-  "commerce": {
-    "involves_sales": true,
-    "in_chatgpt_digital_goods": false,
-    "links_out_for_purchases": true,
-    "purchase_notes": "Phone number purchases and Famulor subscriptions are handled on famulor.io. No digital goods are sold inside ChatGPT."
-  },
-  "connection": {
-    "type": "mcp",
-    "transport": "streamable-http",
-    "url": "https://mcp.famulor.io/mcp",
-    "oauth": {
-      "authorization_server_metadata_url": "https://mcp.famulor.io/.well-known/oauth-authorization-server",
-      "protected_resource_metadata_url": "https://mcp.famulor.io/.well-known/oauth-protected-resource",
-      "scopes": ["mcp"],
-      "pkce_methods": ["S256"],
-      "dynamic_client_registration": true
+  "tools": {
+    "get_assistant": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Retrieves one existing assistant configuration without changing workspace data.",
+        "open_world_justification": "Only reads private first-party workspace data.",
+        "destructive_justification": "Does not create, update, delete, publish, or trigger an action."
+      }
     },
-    "auth_instructions": "When prompted, paste your Famulor API key from https://app.famulor.de/api-keys. The key is encrypted into the access token and never stored on our servers."
+    "get_assistant_version": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Retrieves one saved assistant configuration snapshot without modifying it.",
+        "open_world_justification": "Only reads private first-party workspace data.",
+        "destructive_justification": "Does not restore, alter, or remove any assistant version."
+      }
+    },
+    "get_call": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Retrieves an existing call record and its stored analysis without changing it.",
+        "open_world_justification": "Only reads history from the authenticated private workspace.",
+        "destructive_justification": "Does not place a call, send a message, or modify the conversation."
+      }
+    },
+    "get_email_history_item": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Retrieves an existing email conversation without replying to or changing it.",
+        "open_world_justification": "Only reads the authenticated user's private first-party history.",
+        "destructive_justification": "Does not send, delete, or modify email."
+      }
+    },
+    "get_languages": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Lists supported assistant language codes and labels without changing configuration.",
+        "open_world_justification": "Reads a first-party catalog and does not affect external systems.",
+        "destructive_justification": "Does not create, update, or remove data."
+      }
+    },
+    "get_models": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Lists models available for assistant configuration without selecting or running one.",
+        "open_world_justification": "Reads a private first-party catalog and does not affect public or third-party state.",
+        "destructive_justification": "Does not change an assistant or invoke a model."
+      }
+    },
+    "get_voices": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Lists available voices without cloning, generating, selecting, or playing audio.",
+        "open_world_justification": "Only reads a private first-party catalog and does not contact users or publish content.",
+        "destructive_justification": "Does not modify assistants, create audio, or remove data."
+      }
+    },
+    "list_assistant_versions": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Lists saved configuration snapshots for one assistant without modifying them.",
+        "open_world_justification": "Only reads private first-party workspace data.",
+        "destructive_justification": "Does not restore, delete, or overwrite a version."
+      }
+    },
+    "list_assistants": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Lists existing assistants from the authenticated workspace without changing them.",
+        "open_world_justification": "Only reads private first-party workspace data.",
+        "destructive_justification": "Does not create, update, or delete assistants."
+      }
+    },
+    "list_history": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Searches existing conversation history without replying, retranscribing, or changing records.",
+        "open_world_justification": "Only reads history from the authenticated private workspace.",
+        "destructive_justification": "Does not initiate calls or messages and does not modify conversations."
+      }
+    },
+    "list_prompt_templates": {
+      "annotations": { "readOnlyHint": true, "openWorldHint": false, "destructiveHint": false },
+      "justifications": {
+        "read_only_justification": "Lists visible assistant templates without applying or changing them.",
+        "open_world_justification": "Reads the first-party template catalog only.",
+        "destructive_justification": "Does not create or update an assistant."
+      }
+    }
   },
-  "branding": {
-    "logo_url": "https://mcp.famulor.io/logo.png",
-    "primary_color": "#29C5F6"
-  },
-  "languages": ["en", "de"],
-  "regions": ["DE", "EU", "global"],
-  "compliance": {
-    "gdpr": true,
-    "data_residency": "EU (Germany)",
-    "data_handling_notes": "All call audio, transcripts and customer data are processed and stored on servers located in Germany. A Data Processing Agreement is available at https://www.famulor.io/dpa."
-  },
-  "capabilities": {
-    "tools_count": 66,
-    "categories": [
-      "Assistants (CRUD, voices, languages, models, providers, webhooks)",
-      "Calls (make, list, get, delete)",
-      "Campaigns (create, list, start/stop, delete)",
-      "Leads (create, list, update, delete, secondary contacts)",
-      "Knowledge bases (CRUD + documents)",
-      "Phone numbers (search, purchase, release, list)",
-      "SIP trunks (CRUD)",
-      "Conversations (list, get, send, AI handover)",
-      "WhatsApp (senders, templates, send template/freeform, session status)",
-      "SMS (send)",
-      "Mid-call tools (register custom HTTP integrations)",
-      "AI Replies (context-aware reply generation)",
-      "User profile and balance"
-    ]
-  },
-  "example_prompts": [
-    "List all my Famulor assistants and their current status.",
-    "Create a German sales assistant using GPT-4.1-mini and the Susi voice with a friendly opening line.",
-    "Make a test call to +491234567890 with my onboarding assistant.",
-    "Add these 25 leads to campaign 42 and start it.",
-    "Search for US phone numbers in the 415 area code and purchase the cheapest one.",
-    "Build a knowledge base from https://docs.example.com and attach it to my support assistant.",
-    "Send a WhatsApp template confirmation_v2 to +491701234567.",
-    "Show me all calls today where the goal_completed variable was false."
+  "test_cases": [
+    {
+      "description": "List assistants in the demo workspace.",
+      "user_prompt": "Show me the assistants in my Famulor workspace.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_assistants",
+      "expected_output": "Returns a paginated list of existing assistants without modifying them.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Inspect one existing assistant.",
+      "user_prompt": "Show me the configuration of the Review Support assistant.",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_assistant",
+      "expected_output": "Returns the selected assistant's stored configuration without changing it.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Inspect saved assistant versions.",
+      "user_prompt": "Show me the saved versions of the Review Support assistant, newest first.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_assistant_versions",
+      "expected_output": "Returns the assistant's saved configuration snapshots in newest-first order.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Browse available assistant models.",
+      "user_prompt": "Which models are currently available for my Famulor assistants?",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_models",
+      "expected_output": "Returns the workspace-visible model catalog without selecting or invoking a model.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Review recent conversation history without taking action.",
+      "user_prompt": "Show me the five most recent conversations in my Famulor history and summarize their status.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_history",
+      "expected_output": "Returns up to five recent records with channel, status, assistant, time, and available summary details without starting or modifying a conversation.",
+      "expected_output_url": null
+    }
   ],
-  "test_account": {
-    "available_on_request": true,
-    "contact": "support@famulor.io",
-    "notes": "We can provide a sandbox API key to the OpenAI review team on request."
-  },
-  "repository_url": "https://github.com/bekservice/Famulor-MCP",
-  "version": "0.2.0"
+  "negative_test_cases": [
+    {
+      "description": "Do not create or modify assistants through the read-only directory connector.",
+      "user_prompt": "Create an assistant that cold-calls prospects and qualifies sales leads.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Explains that this connector is read-only and cannot create or change assistants.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not initiate calls, messages, or campaigns.",
+      "user_prompt": "Call this lead now, send a follow-up message, and launch a campaign.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Explains that the connector cannot start calls, send messages, or launch campaigns and does not approximate the request with another tool.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not purchase phone numbers or open billing flows.",
+      "user_prompt": "Buy a German phone number for me and upgrade my plan if needed.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Explains that phone-number purchases, subscriptions, upgrades, credits, and billing actions are outside this connector's capabilities.",
+      "expected_output_url": null
+    }
+  ]
 }

@@ -18,9 +18,7 @@ contacts, knowledge, messaging, automations, dashboards, and workspace settings.
 
 With Cline, developers can build and operate complete voice-agent setups conversationally — e.g. "Create a German receptionist assistant for a dental practice, add the website as a knowledge base, and start a test call."
 
-Two install options:
-- Remote (recommended): `https://app.famulor.io/mcp` — streamable HTTP with OAuth 2.1/PKCE, no local setup
-- Legacy local stdio: `npx -y famulor-mcp` with `FAMULOR_API_KEY` env var
+Install: add the remote server `https://app.famulor.io/mcp` (streamable HTTP with OAuth 2.1/PKCE). There is no local setup.
 
 Also listed in the official MCP registry as `io.famulor/famulor-mcp`.
 

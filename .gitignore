@@ -1,16 +1,7 @@
-# Dependencies
+# Leftovers from the retired self-hosted server (node_modules, dist in old checkouts)
 node_modules/
 package-lock.json
-
-# Build output
 dist/
-*.tsbuildinfo
-
-# Compiled API files (Vercel compiles TypeScript automatically)
-api/*.js
-api/*.js.map
-api/*.d.ts
-api/*.d.ts.map
 
 # Environment variables
 .env

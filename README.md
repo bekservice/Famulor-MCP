@@ -25,9 +25,6 @@
   <a href="https://modelcontextprotocol.io">
     <img src="https://img.shields.io/badge/protocol-MCP-blueviolet" alt="MCP" />
   </a>
-  <a href="https://vercel.com">
-    <img src="https://img.shields.io/badge/hosted%20on-Vercel-000000?logo=vercel" alt="Vercel" />
-  </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT" />
   </a>
@@ -45,8 +42,9 @@ Add the server in your client, then sign in to Famulor and approve the requested
 workspace permissions in the browser. Claude and ChatGPT use OAuth; there is no
 API key to paste into their connector settings.
 
-> **Server URL**: `https://app.famulor.io/mcp` is the canonical endpoint.
-> `https://mcp.famulor.io/mcp` remains online only for legacy clients.
+> **Server URL**: `https://app.famulor.io/mcp`. It runs inside the Famulor
+> platform, so there is nothing to install or host. Your plan needs the
+> **Connect AI / MCP** feature; without it the endpoint answers `403`.
 
 <details open>
 <summary><b>Claude Code</b></summary>
@@ -207,27 +205,6 @@ Apply in-session with `/reload-mcp`.
 </details>
 
 <details>
-<summary><b>Legacy npx/stdio package</b></summary>
-
-The earlier npm package is retained for compatibility, but it does not expose
-the current platform's complete tool catalog. New integrations should use the
-hosted OAuth endpoint above. Existing stdio users can continue with an API key:
-
-```json
-{
-  "mcpServers": {
-    "famulor": {
-      "command": "npx",
-      "args": ["-y", "famulor-mcp"],
-      "env": { "FAMULOR_API_KEY": "your-api-key" }
-    }
-  }
-}
-```
-
-</details>
-
-<details>
 <summary><b>Zed</b></summary>
 
 `~/.config/zed/settings.json`
@@ -283,55 +260,43 @@ Ask the assistant in plain English, e.g. *"Create a German sales assistant using
 
 ## How auth works
 
-The canonical endpoint implements MCP OAuth discovery, authorization code with
-PKCE, dynamic client registration and Client ID Metadata Documents. Your MCP
-client opens Famulor in a browser, where you sign in, choose a workspace and
-approve the requested scopes. API keys are also accepted for server-to-server
-clients, but are not the Claude or ChatGPT connector path.
+The endpoint implements MCP OAuth discovery, authorization code with PKCE,
+dynamic client registration and Client ID Metadata Documents. Your MCP client
+opens Famulor in a browser, where you sign in on app.famulor.io, choose a
+workspace and approve the requested permissions.
+
+Server-to-server clients can send an API key instead: create one under
+**Settings > API & MCP** on app.famulor.io and pass it as
+`Authorization: Bearer fam_…`. Claude and ChatGPT connectors always use OAuth.
+
+Full tool catalog and scopes: [docs.famulor.io/mcp/tools-and-scopes](https://docs.famulor.io/mcp/tools-and-scopes)
 
 ---
 
-## Self-hosting
+## Famulor 1.0 (app.famulor.de)
 
-The canonical full-catalog server is part of the Famulor application and is not
-implemented by this legacy standalone package. The code in this repository is
-retained for existing self-hosted and npm users.
+This MCP server works with workspaces on the Famulor platform at
+**app.famulor.io**. Famulor 1.0 (app.famulor.de) stays available; to bring
+assistants, tools, knowledge, campaigns, automations and your own telephony
+over, use
+[Migrate from Famulor 1.0](https://docs.famulor.io/settings/famulor-migration).
 
-### Deploy to Vercel
+---
 
-```bash
-git clone https://github.com/bekservice/Famulor-MCP.git
-cd Famulor-MCP
-vercel --prod
-```
+## What is in this repository
 
-Set these env vars in the Vercel project:
+The server itself runs inside the Famulor platform. This repository holds what
+clients and directories need to find it:
 
-| Variable      | Required | Value                                                |
-| ------------- | -------- | ---------------------------------------------------- |
-| `MCP_SECRET`  | yes      | `openssl rand -hex 32` — encrypts OAuth tokens.      |
-| `MCP_ISSUER`  | rec.     | Your public URL, e.g. `https://mcp.example.com`.     |
+| File | Purpose |
+| --- | --- |
+| `mcp.json`, `.plugin/plugin.json` | Client and plugin configuration pointing at `https://app.famulor.io/mcp` |
+| `server.json` | Entry in the official MCP Registry (`io.famulor/famulor-mcp`, remote only) |
+| `glama.json` | Glama ownership claim |
+| `SUBMISSIONS.md`, `submissions/`, `chatgpt-app-submission.json` | Directory submission material |
+| `assets/` | Logos |
 
-Then point your domain at the deployment and you're live. See
-[DEPLOYMENT.md](./DEPLOYMENT.md) for the full guide including stdio mode for
-power users.
-
-### Local dev
-
-```bash
-npm install
-echo "MCP_SECRET=$(openssl rand -hex 32)" > .env
-npm run dev:http
-# server on http://localhost:8787
-```
-
-```bash
-# health
-curl http://localhost:8787/health
-
-# OAuth metadata
-curl http://localhost:8787/.well-known/oauth-authorization-server
-```
+The earlier self-hosted server and its npm package `famulor-mcp` are retired.
 
 ---
 
