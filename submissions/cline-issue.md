@@ -1,7 +1,7 @@
 # Cline MCP Marketplace — Issue-Text
 
 Issue erstellen auf: https://github.com/cline/mcp-marketplace/issues/new/choose → "MCP Server Submission"
-Logo anhängen: `submissions/famulor-logo-400.png` (400×400 PNG)
+Logo anhängen: `submissions/famulor-logo-400.png` (512×512 PNG; offizielles Famulor-Zeichen)
 
 ---
 
